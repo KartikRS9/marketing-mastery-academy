@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marketing Mastery Academy | Philip Kotler & Gary Armstrong Curriculum</title>
+  <!-- Google Fonts: Outfit (headings) & Inter (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Tailwind/Vanilla Core Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  <!-- Mermaid.js CDN for visual maps, flowcharts, decision trees -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    // Initialize mermaid configuration
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        background: 'transparent',
+        primaryColor: '#d8a84a',
+        primaryTextColor: '#eae6df',
+        lineColor: '#7d7973',
+        secondaryColor: '#191c21',
+        tertiaryColor: '#242930',
+        fontFamily: "'Inter', sans-serif"
+      }
+    });
+  </script>
+</head>
+<body>
+
+  <!-- Dashboard Container -->
+  <div class="dashboard-container">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <i class="fa-solid fa-graduation-cap logo-icon"></i>
+        <span>Marketing Academy</span>
+      </div>
+      
+      <!-- Progress Overview -->
+      <div class="progress-box">
+        <div class="progress-info">
+          <span class="progress-label">Overall Completion</span>
+          <span class="progress-percent" id="overall-progress-text">0%</span>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="overall-progress-fill" style="width: 0%"></div>
+        </div>
+      </div>
+      
+      <!-- Search Box -->
+      <div class="search-container">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" id="search-input" placeholder="Search concepts, cases, frameworks..." autocomplete="off">
+        <div id="search-results" class="search-results-dropdown hidden"></div>
+      </div>
+
+      <!-- Navigation Chapters List -->
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <div class="loader-inner"><i class="fas fa-spinner fa-spin"></i> Loading curriculum...</div>
+      </nav>
+    </aside>
+
+    <!-- Main Viewport -->
+    <main class="main-viewport">
+      
+      <!-- Header -->
+      <header class="header">
+        <div class="header-left">
+          <button class="toggle-sidebar-btn" id="toggle-sidebar" title="Toggle Sidebar">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="breadcrumbs">
+            <span class="breadcrumb-part" id="breadcrumb-part">Part 1</span>
+            <i class="fa-solid fa-chevron-right breadcrumb-separator"></i>
+            <span class="breadcrumb-chapter" id="breadcrumb-chapter">Chapter 1</span>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="theme-selector-container">
+            <label for="theme-select" class="theme-select-label"><i class="fa-solid fa-palette"></i> Aesthetic:</label>
+            <select id="theme-select" class="theme-select-dropdown">
+              <option value="chalkboard">Chalkboard Executive (Dark)</option>
+              <option value="nebula-dark">Nebula Dark (Glassmorphism)</option>
+              <option value="nordic-minimal">Nordic Minimalist (Light)</option>
+              <option value="cyber-terminal">Cyberpunk Terminal (Matrix)</option>
+            </select>
+          </div>
+          <button class="theme-toggle-btn" id="theme-toggle-btn" title="Toggle Day/Night Mode">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+          <button class="settings-btn" id="settings-btn" title="Learning Settings">
+            <i class="fa-solid fa-gear"></i>
+          </button>
+          <div class="badge-legend">
+            <span class="legend-badge textbook-badge"><i class="fa-solid fa-book"></i> Textbook</span>
+            <span class="legend-badge insight-badge"><i class="fa-solid fa-lightbulb"></i> Professional Insight</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Welcome Content (Visible initially) -->
+      <div id="welcome-screen" class="welcome-screen">
+        <div class="welcome-card">
+          <h1>Welcome to the Professional Marketing Academy</h1>
+          <p>
+            An interactive executive learning portal built upon Philip Kotler and Gary Armstrong's legendary 
+            <em>Principles of Marketing</em>. This platform follows the exact 20-chapter sequence of the textbook, 
+            combining rigorous academic theory with cutting-edge real-world marketing application.
+          </p>
+          <div class="features-grid">
+            <div class="feature-item">
+              <i class="fa-solid fa-sitemap"></i>
+              <h3>Visual Roadmaps & Maps</h3>
+              <p>Interact with dynamic Knowledge Graphs, Mind Maps, Flowcharts, and Decision Trees for every chapter.</p>
+            </div>
+            <div class="feature-item">
+              <i class="fa-solid fa-lightbulb"></i>
+              <h3>First Principles & Insights</h3>
+              <p>Clearly distinguish textbook concepts from advanced professional and Indian market insights.</p>
+            </div>
+            <div class="feature-item">
+              <i class="fa-solid fa-business-time"></i>
+              <h3>Global & Indian Cases</h3>
+              <p>Dive deep into curated case studies like Reliance Jio, Nykaa, Starbucks, Nike, and Apple.</p>
+            </div>
+            <div class="feature-item">
+              <i class="fa-solid fa-circle-check"></i>
+              <h3>Mastery Assessments</h3>
+              <p>Validate your knowledge with custom MCQs, MBA strategic questions, and the Feynman Review system.</p>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="start-learning-btn">Start Learning <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+      </div>
+
+      <!-- Chapter Viewport (Hidden initially) -->
+      <div id="chapter-view" class="chapter-view hidden">
+        
+        <!-- Chapter Header Details -->
+        <div class="chapter-info-section">
+          <h2 class="chapter-title" id="chapter-title">Chapter Title</h2>
+          <p class="chapter-part-subtitle" id="chapter-part-subtitle">Part Name</p>
+        </div>
+
+        <!-- Lessons Breadcrumb / Timeline Slider -->
+        <div class="lessons-timeline" id="lessons-timeline">
+          <!-- Dynamically populated lessons timeline -->
+        </div>
+
+        <!-- Lesson Focus Card (Hidden by default) -->
+        <div id="lesson-focus-card" class="lesson-focus-card card hidden">
+          <div class="lesson-focus-header">
+            <h4 class="lesson-focus-title" id="lesson-focus-title">Lesson Title</h4>
+            <button class="close-lesson-btn" id="close-lesson-btn" title="Close Overview">&times;</button>
+          </div>
+          <p class="lesson-focus-desc" id="lesson-focus-desc">Lesson summary details and core strategic action items.</p>
+          
+          <div id="lesson-visual-segment" class="lesson-visual-segment hidden">
+            <h5 class="lesson-visual-title-sub"><i class="fa-solid fa-circle-nodes"></i> Lesson Figure Reference</h5>
+            <div class="lesson-visual-layout">
+              <div class="lesson-visual-img-box" id="lesson-visual-img-box"></div>
+              <div class="lesson-visual-text">
+                <p class="lesson-visual-caption" id="lesson-visual-caption"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Learning Persona Dashboard Focus -->
+        <div id="persona-focus-card" class="persona-focus-card card">
+          <div class="persona-focus-header-top">
+            <span class="persona-focus-badge"><i class="fa-solid fa-graduation-cap"></i> ACTIVE PERSONA FOCUS</span>
+            <h3 class="persona-focus-heading" id="persona-focus-heading">Loading profile...</h3>
+          </div>
+          <div id="persona-focus-content" class="persona-focus-content-body">
+            <!-- Dynamically populated based on active learning profile -->
+          </div>
+        </div>
+
+        <!-- Tab Controls Navigation -->
+        <div class="tabs-nav-container">
+          <div class="tabs-nav" id="tabs-nav">
+            <button class="tab-btn active" data-tab="strategic-core">
+              <i class="fa-solid fa-brain"></i> Strategic Core
+            </button>
+            <button class="tab-btn" data-tab="visual-mapping">
+              <i class="fa-solid fa-diagram-project"></i> Visual Mapping
+            </button>
+            <button class="tab-btn" data-tab="cases-applications">
+              <i class="fa-solid fa-briefcase"></i> Cases & Apps
+            </button>
+            <button class="tab-btn" data-tab="academic-rigor">
+              <i class="fa-solid fa-graduation-cap"></i> Academic Prep
+            </button>
+            <button class="tab-btn" data-tab="review-mastery">
+              <i class="fa-solid fa-award"></i> Review & Mastery
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabs Content Container -->
+        <div class="tab-content-container">
+
+          <!-- TAB 1: STRATEGIC CORE -->
+          <div class="tab-content active" id="tab-strategic-core">
+            
+            <!-- Learning Objectives -->
+            <section class="card card-glow section-box">
+              <h3 class="section-title"><i class="fa-solid fa-bullseye font-violet"></i> Learning Objectives</h3>
+              <ul class="styled-list" id="core-learning-objectives"></ul>
+            </section>
+
+            <!-- First Principles -->
+            <section class="card section-box">
+              <h3 class="section-title"><i class="fa-solid fa-atom font-cyan"></i> First Principles Philosophy</h3>
+              <div class="first-principles-block" id="core-first-principles">
+                <!-- Populated dynamically -->
+              </div>
+            </section>
+
+            <!-- Definitions -->
+            <section class="card section-box">
+              <h3 class="section-title"><i class="fa-solid fa-book-open font-pink"></i> Core Definitions</h3>
+              <div class="definitions-grid" id="core-definitions">
+                <!-- Populated dynamically -->
+              </div>
+            </section>
+
+            <!-- Intuition Analogy -->
+            <section class="card section-box">
+              <h3 class="section-title"><i class="fa-solid fa-lightbulb font-gold"></i> Core Intuition & Story</h3>
+              <div class="intuition-block" id="core-intuition">
+                <!-- Populated dynamically -->
+              </div>
+            </section>
+
+            <!-- Frameworks -->
+            <section class="card section-box">
+              <h3 class="section-title"><i class="fa-solid fa-cubes font-blue"></i> Key Strategy Frameworks</h3>
+              <div class="frameworks-container" id="core-frameworks">
+                <!-- Populated dynamically -->
+              </div>
+            </section>
+
+            <!-- Comparison Tables -->
+            <section class="card section-box">
+              <h3 class="section-title"><i class="fa-solid fa-table-list font-mint"></i> Comparative Matrix</h3>
+              <div class="table-container" id="core-comparison-table">
+                <!-- Populated dynamically -->
+              </div>
+            </section>
+
+            <!-- Cross-Links & Memory Techniques -->
+            <div class="two-col-grid">
+              <section class="card">
+                <h3 class="section-title"><i class="fa-solid fa-link font-orange"></i> Cross-Chapter Connections</h3>
+                <ul class="styled-list" id="core-cross-links"></ul>
+              </section>
+              <section class="card">
+                <h3 class="section-title"><i class="fa-solid fa-key font-yellow"></i> Memory Techniques (Mnemonics)</h3>
+                <div class="memory-container" id="core-memory-techniques"></div>
+              </section>
+            </div>
+
+          </div>
+
+          <!-- TAB 2: VISUAL MAPPING -->
+          <div class="tab-content" id="tab-visual-mapping">
+
+            <!-- Primary Textbook Visual references -->
+            <section class="card section-box hidden" id="textbook-visuals-section">
+              <h3 class="section-title"><i class="fa-solid fa-image font-gold"></i> Textbook Primary Visuals</h3>
+              <p class="section-description">High-fidelity diagram references extracted from Kotler & Armstrong's Principles of Marketing textbook.</p>
+              <div id="textbook-visuals-container" class="textbook-visuals-grid">
+                <!-- Dynamically populated images -->
+              </div>
+            </section>
+
+            <!-- Visual Roadmap timeline style -->
+            <section class="card section-box">
+              <h3 class="section-title"><i class="fa-solid fa-route font-violet"></i> Visual Learning Roadmap</h3>
+              <div class="timeline-visual" id="visual-roadmap-container">
+                <!-- Timelines styled with pure CSS or diagrams -->
+              </div>
+            </section>
+
+            <!-- Knowledge Graph (Mermaid) -->
+            <section class="card section-box">
+              <div class="section-header-flex">
+                <h3 class="section-title"><i class="fa-solid fa-circle-nodes font-blue"></i> Chapter Knowledge Graph</h3>
+                <span class="legend-badge insight-badge">Interactive Map</span>
+              </div>
+              <p class="section-description">A network map showing core concepts, nodes, and relational edges.</p>
+              <div class="diagram-render-area text-center">
+                <div class="mermaid" id="mermaid-knowledge-graph"></div>
+              </div>
+            </section>
+
+            <!-- Mind Map (Mermaid) -->
+            <section class="card section-box">
+              <h3 class="section-title"><i class="fa-solid fa-sitemap font-pink"></i> Strategy Mind Map</h3>
+              <div class="diagram-render-area">
+                <div class="mermaid" id="mermaid-mind-map"></div>
+              </div>
+            </section>
+
+            <!-- Flowcharts (Mermaid) -->
+            <section class="card section-box">
+              <h3 class="section-title"><i class="fa-solid fa-network-wired font-cyan"></i> Process Flowcharts</h3>
+              <div class="diagram-render-area">
+                <div class="mermaid" id="mermaid-flowchart"></div>
+              </div>
+            </section>
+
+            <!-- Infographics (Styled Cards/Metrics) -->
+            <section class="card section-box">
+              <h3 class="section-title"><i class="fa-solid fa-chart-pie font-gold"></i> Infographic & Data Metrics</h3>
+              <div class="infographics-grid" id="visual-infographics">
+                <!-- Dynamic cards with metrics -->
+              </div>
+            </section>
+
+            <!-- Concept Maps (Mermaid) -->
+            <section class="card section-box">
+              <h3 class="section-title"><i class="fa-solid fa-circle-dot font-mint"></i> Structural Concept Map</h3>
+              <div class="diagram-render-area">
+                <div class="mermaid" id="mermaid-concept-map"></div>
+              </div>
+            </section>
+
+            <!-- Decision Trees (Mermaid) -->
+            <section class="card section-box">
+              <h3 class="section-title"><i class="fa-solid fa-tree font-orange"></i> Strategic Decision Tree</h3>
+              <div class="diagram-render-area">
+                <div class="mermaid" id="mermaid-decision-tree"></div>
+              </div>
+            </section>
+
+            <!-- Architecture Diagrams (Mermaid) -->
+            <section class="card section-box">
+              <h3 class="section-title"><i class="fa-solid fa-cube font-yellow"></i> System Architecture Diagram</h3>
+              <div class="diagram-render-area">
+                <div class="mermaid" id="mermaid-visual-diagram"></div>
+              </div>
+            </section>
+
+          </div>
+
+          <!-- TAB 3: CASES & APPLICATIONS -->
+          <div class="tab-content" id="tab-cases-applications">
+            
+            <!-- Real World & Industry Examples -->
+            <div class="two-col-grid">
+              <section class="card">
+                <h3 class="section-title"><i class="fa-solid fa-globe font-blue"></i> Real-World Quick Snippet</h3>
+                <div class="case-snippet-content" id="cases-real-world"></div>
+              </section>
+              <section class="card">
+                <h3 class="section-title"><i class="fa-solid fa-industry font-orange"></i> Industry Applications</h3>
+                <div class="case-snippet-content" id="cases-industry"></div>
+              </section>
+            </div>
+
+            <!-- Indian Case Study -->
+            <section class="card section-box font-border-violet">
+              <div class="section-header-flex">
+                <h3 class="section-title"><i class="fa-solid fa-flag font-gold"></i> Indian Strategic Case Study</h3>
+                <span class="legend-badge insight-badge"><i class="fa-solid fa-lightbulb"></i> Professional Insight Add-on</span>
+              </div>
+              <div class="case-study-box" id="cases-indian-case">
+                <!-- Dynamic content -->
+              </div>
+            </section>
+
+            <!-- Global Case Study -->
+            <section class="card section-box font-border-blue">
+              <div class="section-header-flex">
+                <h3 class="section-title"><i class="fa-solid fa-earth-americas font-blue"></i> Global Textbook Case Study</h3>
+                <span class="legend-badge textbook-badge"><i class="fa-solid fa-book"></i> Textbook Core Case</span>
+              </div>
+              <div class="case-study-box" id="cases-global-case">
+                <!-- Dynamic content -->
+              </div>
+            </section>
+
+            <!-- Practical Applications & Common Mistakes -->
+            <div class="two-col-grid">
+              <section class="card">
+                <h3 class="section-title"><i class="fa-solid fa-toolbox font-mint"></i> Marketer's Monday Action Items</h3>
+                <ul class="styled-list" id="cases-practical-applications"></ul>
+              </section>
+              <section class="card">
+                <h3 class="section-title"><i class="fa-solid fa-triangle-exclamation font-red"></i> Common Practitioner Mistakes</h3>
+                <ul class="styled-list font-red-items" id="cases-common-mistakes"></ul>
+              </section>
+            </div>
+
+          </div>
+
+          <!-- TAB 4: ACADEMIC RIGOR -->
+          <div class="tab-content" id="tab-academic-rigor">
+            
+            <!-- Interview & MBA Questions -->
+            <section class="card section-box">
+              <h3 class="section-title"><i class="fa-solid fa-comments font-violet"></i> Corporate Interview Preparation</h3>
+              <p class="section-description">High-probability questions asked by top CMOs and hiring directors with strategic answers.</p>
+              <div class="accordion-container" id="academic-interview-questions">
+                <!-- Populated dynamically -->
+              </div>
+            </section>
+
+            <section class="card section-box">
+              <h3 class="section-title"><i class="fa-solid fa-pen-fancy font-blue"></i> MBA Exams & Strategic Analysis</h3>
+              <p class="section-description">Long-form essay questions mirroring Wharton, Harvard, and IIM business school exams.</p>
+              <div class="accordion-container" id="academic-mba-questions">
+                <!-- Populated dynamically -->
+              </div>
+            </section>
+
+            <!-- Practice Exercises & Assignments -->
+            <div class="two-col-grid">
+              <section class="card">
+                <h3 class="section-title"><i class="fa-solid fa-circle-question font-cyan"></i> Practice Exercises</h3>
+                <div class="practice-box" id="academic-exercises"></div>
+              </section>
+              <section class="card">
+                <h3 class="section-title"><i class="fa-solid fa-clipboard-list font-pink"></i> Course Assignment</h3>
+                <div class="practice-box" id="academic-assignments"></div>
+              </section>
+            </div>
+
+            <!-- Scenario Questions -->
+            <section class="card section-box">
+              <h3 class="section-title"><i class="fa-solid fa-puzzle-piece font-orange"></i> Strategic Mini-Scenarios (Caselets)</h3>
+              <div class="scenarios-container" id="academic-scenarios">
+                <!-- Dynamic scenarios -->
+              </div>
+            </section>
+
+          </div>
+
+          <!-- TAB 5: REVIEW & MASTERY -->
+          <div class="tab-content" id="tab-review-mastery">
+
+            <!-- One Page Revision -->
+            <section class="card section-box">
+              <h3 class="section-title"><i class="fa-solid fa-file-invoice font-gold"></i> One-Page High-Yield Cheat Sheet</h3>
+              <div class="one-page-revision-box" id="review-one-page">
+                <!-- Dynamic markdown-styled text -->
+              </div>
+            </section>
+
+            <!-- Feynman Review Technique -->
+            <section class="card section-box">
+              <h3 class="section-title"><i class="fa-solid fa-chalkboard-user font-mint"></i> The Feynman Review Challenge</h3>
+              <p class="section-description">
+                "If you can't explain it to a 6-year-old, you don't understand it yourself." Type your explanation of the chapter's core principle below. We will analyze your summary and highlight structural elements you missed.
+              </p>
+              <div class="feynman-interface">
+                <textarea id="feynman-text" placeholder="Explain this chapter's core strategy in simple, non-jargon terms..."></textarea>
+                <div class="feynman-controls">
+                  <button class="btn btn-secondary" id="feynman-check-btn"><i class="fa-solid fa-wand-magic-sparkles"></i> Analyze Explanation</button>
+                  <button class="btn btn-text" id="feynman-example-btn">Show Model Explanation</button>
+                </div>
+                <div id="feynman-feedback" class="feynman-feedback hidden"></div>
+              </div>
+            </section>
+
+            <!-- Interactive Quiz (Mastery Assessment) -->
+            <section class="card section-box" id="quiz-section">
+              <h3 class="section-title"><i class="fa-solid fa-list-check font-pink"></i> Chapter Mastery Assessment</h3>
+              <p class="section-description">Take this 5-question interactive evaluation to test your understanding and unlock chapter credentials.</p>
+              
+              <div class="quiz-container" id="quiz-container">
+                <!-- Interactive quiz rendered here -->
+              </div>
+            </section>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Settings Modal (Translucent Overlay) -->
+  <div class="settings-modal" id="settings-modal">
+    <div class="settings-modal-content card">
+      <div class="settings-modal-header">
+        <h3><i class="fa-solid fa-sliders"></i> Academy Configurations</h3>
+        <button class="close-modal-btn" id="close-modal-btn">&times;</button>
+      </div>
+      <div class="settings-modal-body">
+        
+        <!-- Persona Selection Section -->
+        <div class="settings-section">
+          <h4><i class="fa-solid fa-user-gear font-primary"></i> Learning Persona / Profile</h4>
+          <p class="settings-section-desc">Select how concepts should be framed, analyzed, and trained.</p>
+          
+          <div class="persona-cards-grid">
+            
+            <label class="persona-card-option">
+              <input type="radio" name="learning-profile" value="general" checked>
+              <div class="persona-card-box">
+                <div class="persona-icon-container"><i class="fa-solid fa-graduation-cap"></i></div>
+                <div class="persona-info-box">
+                  <div class="persona-name">General Mode (Default)</div>
+                  <div class="persona-desc">Academic Mentor & Professor. Comprehensive walk-through of all 30 core elements.</div>
+                </div>
+              </div>
+            </label>
+
+            <label class="persona-card-option">
+              <input type="radio" name="learning-profile" value="socratic">
+              <div class="persona-card-box">
+                <div class="persona-icon-container"><i class="fa-solid fa-chalkboard-user"></i></div>
+                <div class="persona-info-box">
+                  <div class="persona-name">Socratic Trainer</div>
+                  <div class="persona-desc">"Don't teach, train me." Interactive scenarios, Q&As, and blocks progress until correct.</div>
+                </div>
+              </div>
+            </label>
+
+            <label class="persona-card-option">
+              <input type="radio" name="learning-profile" value="network">
+              <div class="persona-card-box">
+                <div class="persona-icon-container"><i class="fa-solid fa-circle-nodes"></i></div>
+                <div class="persona-info-box">
+                  <div class="persona-name">Network Architect</div>
+                  <div class="persona-desc">Renders prerequisites, backward/forward links, and highlights 80/20 hierarchies.</div>
+                </div>
+              </div>
+            </label>
+
+            <label class="persona-card-option">
+              <input type="radio" name="learning-profile" value="case-study">
+              <div class="persona-card-box">
+                <div class="persona-icon-container"><i class="fa-solid fa-briefcase"></i></div>
+                <div class="persona-info-box">
+                  <div class="persona-name">Case Study Scholar</div>
+                  <div class="persona-desc">Harvard case method. Mini/medium/long cases with alternative choices and analysis.</div>
+                </div>
+              </div>
+            </label>
+
+            <label class="persona-card-option">
+              <input type="radio" name="learning-profile" value="product-manager">
+              <div class="persona-card-box">
+                <div class="persona-icon-container"><i class="fa-solid fa-laptop-code"></i></div>
+                <div class="persona-info-box">
+                  <div class="persona-name">Tech Product Manager</div>
+                  <div class="persona-desc">SaaS context. Aligns marketing with PMF metrics, JTBD problems, and prioritization.</div>
+                </div>
+              </div>
+            </label>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Chapters Index and Application Core -->
+  <script src="data/chapters.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
