@@ -14,6 +14,8 @@
   <link rel="stylesheet" href="styles.css">
   <!-- Mermaid.js CDN for visual maps, flowcharts, decision trees -->
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <!-- Supabase JS Client Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     // Initialize mermaid configuration
     mermaid.initialize({
@@ -44,6 +46,60 @@
   </script>
 </head>
 <body>
+
+  <!-- Login Portal Overlay (Shown if unauthenticated) -->
+  <div class="login-portal-overlay" id="login-portal-overlay">
+    <div class="login-card card">
+      <div class="login-logo-header">
+        <i class="fa-solid fa-graduation-cap logo-icon"></i>
+        <h2>Marketing Mastery Academy</h2>
+        <p>Kotler & Armstrong Principles of Marketing Syllabus</p>
+      </div>
+      
+      <!-- Toggle Login Modes -->
+      <div class="login-tabs">
+        <button class="login-tab-btn active" id="tab-btn-user" data-mode="user"><i class="fa-solid fa-cloud"></i> Supabase Sync</button>
+        <button class="login-tab-btn" id="tab-btn-admin" data-mode="admin"><i class="fa-solid fa-user-shield"></i> Local Admin</button>
+      </div>
+
+      <!-- Supabase Auth Section -->
+      <div class="login-section-content" id="login-user-section">
+        <p class="login-section-desc">Sign in or create an account to synchronize your chapter credentials, notes, and metrics across devices.</p>
+        <div class="input-group">
+          <label><i class="fa-solid fa-envelope"></i> Email Address</label>
+          <input type="email" id="user-email" placeholder="enter your email">
+        </div>
+        <div class="input-group">
+          <label><i class="fa-solid fa-key"></i> Password</label>
+          <input type="password" id="user-password" placeholder="enter password">
+        </div>
+        <div class="login-actions">
+          <button class="btn btn-primary" id="user-signin-btn"><i class="fa-solid fa-right-to-bracket"></i> Sign In</button>
+          <button class="btn btn-secondary" id="user-signup-btn"><i class="fa-solid fa-user-plus"></i> Sign Up</button>
+        </div>
+        <div class="auth-message-box error hidden" id="user-auth-error"></div>
+        <div class="auth-message-box success hidden" id="user-auth-success"></div>
+      </div>
+
+      <!-- Admin Bypass Section -->
+      <div class="login-section-content hidden" id="login-admin-section">
+        <p class="login-section-desc">Bypass cloud sync using offline local credentials. Fits local-only testing or demo use cases.</p>
+        <div class="input-group">
+          <label><i class="fa-solid fa-user-astronaut"></i> Admin ID</label>
+          <input type="text" id="admin-id" placeholder="enter admin id (default: admin)" value="admin">
+        </div>
+        <div class="input-group">
+          <label><i class="fa-solid fa-lock"></i> Password</label>
+          <input type="password" id="admin-password" placeholder="enter admin password (default: admin123)">
+        </div>
+        <div class="login-actions">
+          <button class="btn btn-primary" id="admin-bypass-btn" style="width: 100%;"><i class="fa-solid fa-user-shield"></i> Authenticate Local Admin</button>
+        </div>
+        <div class="auth-message-box error hidden" id="admin-auth-error"></div>
+      </div>
+      
+    </div>
+  </div>
 
   <!-- Dashboard Container -->
   <div class="dashboard-container">
@@ -576,6 +632,40 @@
               </div>
             </label>
 
+          </div>
+        </div>
+
+        <!-- Supabase Integration Section -->
+        <div class="settings-section" style="border-top: 1px dashed var(--border-card); margin-top: 1.5rem; padding-top: 1.5rem;">
+          <h4><i class="fa-solid fa-cloud-bolt font-pink"></i> Cloud Synchronization Settings</h4>
+          <p class="settings-section-desc">Connect a Supabase project to synchronize your learning credentials, custom notes, and profile settings across multiple devices.</p>
+          
+          <div class="supabase-setup-fields">
+            <div class="input-group">
+              <label>Supabase Project URL</label>
+              <input type="text" id="settings-supabase-url" placeholder="https://your-project.supabase.co">
+            </div>
+            <div class="input-group">
+              <label>Supabase Anonymous Public Key</label>
+              <input type="password" id="settings-supabase-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+            </div>
+            <div class="supabase-status-row">
+              <span class="status-indicator local" id="settings-sync-status"><i class="fa-solid fa-circle-check"></i> Local Offline Mode</span>
+              <button class="btn btn-secondary" id="settings-save-db-btn" style="margin-left: auto;"><i class="fa-solid fa-floppy-disk"></i> Save & Test Connection</button>
+            </div>
+            <div id="settings-sync-feedback" class="auth-message-box hidden" style="margin-top: 0.5rem; font-size: 0.75rem; padding: 0.5rem;"></div>
+          </div>
+          
+          <!-- Signed-In Profile Section -->
+          <div id="settings-profile-info" class="settings-profile-info hidden" style="margin-top: 1rem; padding: 0.75rem; background: hsla(220, 20%, 15%, 0.5); border-radius: 8px; border: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <i class="fa-solid fa-circle-user" style="font-size: 1.5rem; color: var(--secondary);"></i>
+              <div>
+                <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-primary);" id="settings-profile-email">email@domain.com</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);" id="settings-profile-role">User Profile</div>
+              </div>
+            </div>
+            <button class="btn btn-secondary" id="settings-signout-btn" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
           </div>
         </div>
 

@@ -6,6 +6,11 @@ let currentChapterData = null;
 let userProgress = {}; // Key: chapterId, Value: { completed: boolean, quizScore: number }
 let activeLearningProfile = 'general';
 
+// Authentication & Database Sync Variables
+let supabase = null;
+let activeSession = null; // Supabase user object or local admin object
+const LOCAL_ADMIN_KEY = 'mktg_academy_admin_session';
+
 // DOM Elements
 const sidebarNav = document.getElementById('sidebar-nav');
 const welcomeScreen = document.getElementById('welcome-screen');
@@ -26,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCurriculum();
   setupEventListeners();
   updateProgressUI();
+  initAuthAndSync();
 });
 
 // Load and Apply Theme from LocalStorage
@@ -1006,6 +1012,8 @@ function setupSearch() {
 
 // Setup Event Listeners
 function setupEventListeners() {
+  setupAuthEventListeners();
+  
   // Mobile Sidebar Toggle
   toggleSidebarBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1857,3 +1865,346 @@ function renderPersonaFocusContent(data) {
     `;
   }
 }
+
+// ==========================================
+// Supabase Authentication & Cloud Sync Core
+// ==========================================
+
+// Initialize Auth & Synchronization
+function initAuthAndSync() {
+  const url = localStorage.getItem('mktg_supabase_url');
+  const key = localStorage.getItem('mktg_supabase_key');
+  
+  // Populate settings fields if saved
+  const settingsUrlInput = document.getElementById('settings-supabase-url');
+  const settingsKeyInput = document.getElementById('settings-supabase-key');
+  if (settingsUrlInput && url) settingsUrlInput.value = url;
+  if (settingsKeyInput && key) settingsKeyInput.value = key;
+  
+  if (url && key && window.supabase) {
+    try {
+      supabase = window.supabase.createClient(url, key);
+    } catch (e) {
+      console.error("Failed to initialize Supabase client:", e);
+    }
+  }
+  
+  // Check local Admin session first
+  const savedAdmin = localStorage.getItem(LOCAL_ADMIN_KEY);
+  if (savedAdmin) {
+    try {
+      activeSession = JSON.parse(savedAdmin);
+      hideLoginOverlay();
+      updateAuthUI();
+      return;
+    } catch (e) {
+      localStorage.removeItem(LOCAL_ADMIN_KEY);
+    }
+  }
+  
+  // Check Supabase session next
+  if (supabase) {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (session && !error) {
+        activeSession = session.user;
+        hideLoginOverlay();
+        updateAuthUI();
+        syncProgressFromCloud();
+      } else {
+        showLoginOverlay();
+      }
+    }).catch(err => {
+      console.warn("Supabase Auth session fetch failed, showing portal.", err);
+      showLoginOverlay();
+    });
+  } else {
+    showLoginOverlay();
+  }
+}
+
+// Show/Hide Login Overlay
+function showLoginOverlay() {
+  const overlay = document.getElementById('login-portal-overlay');
+  if (overlay) overlay.classList.remove('hidden');
+}
+
+function hideLoginOverlay() {
+  const overlay = document.getElementById('login-portal-overlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+// Update settings and auth labels
+function updateAuthUI() {
+  const statusLabel = document.getElementById('settings-sync-status');
+  const profileInfo = document.getElementById('settings-profile-info');
+  const profileEmail = document.getElementById('settings-profile-email');
+  const profileRole = document.getElementById('settings-profile-role');
+  
+  if (!statusLabel) return;
+  
+  if (activeSession) {
+    if (activeSession.email.endsWith('@academy.local')) {
+      // Local Admin Mode
+      statusLabel.className = 'status-indicator local';
+      statusLabel.innerHTML = `<i class="fa-solid fa-user-shield"></i> Local Admin Mode`;
+      
+      if (profileInfo && profileEmail && profileRole) {
+        profileInfo.classList.remove('hidden');
+        profileEmail.innerText = activeSession.email;
+        profileRole.innerText = activeSession.role;
+      }
+    } else {
+      // Cloud Supabase Mode
+      statusLabel.className = 'status-indicator cloud';
+      statusLabel.innerHTML = `<i class="fa-solid fa-cloud-check" style="color: var(--secondary);"></i> Cloud Synchronized`;
+      
+      if (profileInfo && profileEmail && profileRole) {
+        profileInfo.classList.remove('hidden');
+        profileEmail.innerText = activeSession.email;
+        profileRole.innerText = 'Authenticated User';
+      }
+    }
+  } else {
+    statusLabel.className = 'status-indicator local';
+    statusLabel.innerHTML = `<i class="fa-solid fa-circle-check"></i> Local Offline Mode`;
+    if (profileInfo) profileInfo.classList.add('hidden');
+  }
+}
+
+// Fetch user data from Supabase DB and merge
+function syncProgressFromCloud() {
+  if (!supabase || !activeSession || activeSession.email.endsWith('@academy.local')) return;
+  
+  supabase
+    .from('academy_progress')
+    .select('chapter_id, completed, quiz_score')
+    .eq('user_id', activeSession.id)
+    .then(({ data, error }) => {
+      if (!error && data) {
+        data.forEach(row => {
+          userProgress[row.chapter_id] = {
+            completed: row.completed,
+            quizScore: row.quiz_score
+          };
+        });
+        localStorage.setItem('mktg_academy_progress', JSON.stringify(userProgress));
+        updateProgressUI();
+        renderCurriculum();
+        // Reload currently selected chapter view if active
+        if (activeChapterId) {
+          selectChapter(activeChapterId);
+        }
+      } else {
+        console.warn("Could not sync progress from Supabase cloud database.", error);
+      }
+    });
+}
+
+// Upload/Sync single progress record to Supabase
+function syncRecordToCloud(chapterId, completed, quizScore) {
+  if (!supabase || !activeSession || activeSession.email.endsWith('@academy.local')) return;
+  
+  supabase
+    .from('academy_progress')
+    .upsert({
+      user_id: activeSession.id,
+      chapter_id: parseInt(chapterId),
+      completed: completed,
+      quiz_score: parseInt(quizScore)
+    }, { onConflict: 'user_id,chapter_id' })
+    .then(({ error }) => {
+      if (error) {
+        console.error("Supabase upsert failed:", error);
+      }
+    });
+}
+
+// Override Save Progress to include cloud sync hooks
+const originalSaveProgress = saveProgress;
+saveProgress = function() {
+  originalSaveProgress();
+  if (activeSession && !activeSession.email.endsWith('@academy.local')) {
+    Object.keys(userProgress).forEach(chId => {
+      const record = userProgress[chId];
+      syncRecordToCloud(chId, record.completed, record.quizScore);
+    });
+  }
+};
+
+// Register auth UI interactions and credentials handling
+function setupAuthEventListeners() {
+  const tabUser = document.getElementById('tab-btn-user');
+  const tabAdmin = document.getElementById('tab-btn-admin');
+  const sectionUser = document.getElementById('login-user-section');
+  const sectionAdmin = document.getElementById('login-admin-section');
+  
+  // Tab Switcher
+  if (tabUser && tabAdmin && sectionUser && sectionAdmin) {
+    tabUser.addEventListener('click', () => {
+      tabUser.classList.add('active');
+      tabAdmin.classList.remove('active');
+      sectionUser.classList.remove('hidden');
+      sectionAdmin.classList.add('hidden');
+    });
+    tabAdmin.addEventListener('click', () => {
+      tabAdmin.classList.add('active');
+      tabUser.classList.remove('active');
+      sectionAdmin.classList.remove('hidden');
+      sectionUser.classList.add('hidden');
+    });
+  }
+  
+  // Local Admin Bypass Authentication
+  const adminBypassBtn = document.getElementById('admin-bypass-btn');
+  const adminIdInput = document.getElementById('admin-id');
+  const adminPassInput = document.getElementById('admin-password');
+  const adminError = document.getElementById('admin-auth-error');
+  
+  if (adminBypassBtn && adminIdInput && adminPassInput && adminError) {
+    adminBypassBtn.addEventListener('click', () => {
+      const adminId = adminIdInput.value.trim();
+      const adminPass = adminPassInput.value.trim();
+      
+      if (adminId === 'admin' && adminPass === 'admin123') {
+        adminError.classList.add('hidden');
+        const sessionObj = {
+          email: 'admin@academy.local',
+          role: 'System Administrator'
+        };
+        localStorage.setItem(LOCAL_ADMIN_KEY, JSON.stringify(sessionObj));
+        activeSession = sessionObj;
+        hideLoginOverlay();
+        updateAuthUI();
+      } else {
+        adminError.innerText = 'Authentication Failed: Invalid local admin credentials.';
+        adminError.classList.remove('hidden');
+      }
+    });
+  }
+  
+  // Supabase User Sign In
+  const userSigninBtn = document.getElementById('user-signin-btn');
+  const userSignupBtn = document.getElementById('user-signup-btn');
+  const userEmailInput = document.getElementById('user-email');
+  const userPassInput = document.getElementById('user-password');
+  const userError = document.getElementById('user-auth-error');
+  const userSuccess = document.getElementById('user-auth-success');
+  
+  if (userSigninBtn && userEmailInput && userPassInput && userError && userSuccess) {
+    userSigninBtn.addEventListener('click', () => {
+      userError.classList.add('hidden');
+      userSuccess.classList.add('hidden');
+      
+      const email = userEmailInput.value.trim();
+      const password = userPassInput.value.trim();
+      
+      if (!supabase) {
+        userError.innerText = "Connection Error: Supabase client is not configured. Input Project credentials in Settings drawer.";
+        userError.classList.remove('hidden');
+        return;
+      }
+      
+      supabase.auth.signInWithPassword({ email, password }).then(({ data: { session }, error }) => {
+        if (error) {
+          userError.innerText = `Sign In Error: ${error.message}`;
+          userError.classList.remove('hidden');
+        } else if (session) {
+          activeSession = session.user;
+          hideLoginOverlay();
+          updateAuthUI();
+          syncProgressFromCloud();
+        }
+      });
+    });
+  }
+  
+  // Supabase User Sign Up
+  if (userSignupBtn && userEmailInput && userPassInput && userError && userSuccess) {
+    userSignupBtn.addEventListener('click', () => {
+      userError.classList.add('hidden');
+      userSuccess.classList.add('hidden');
+      
+      const email = userEmailInput.value.trim();
+      const password = userPassInput.value.trim();
+      
+      if (!supabase) {
+        userError.innerText = "Connection Error: Supabase client is not configured. Input Project credentials in Settings drawer.";
+        userError.classList.remove('hidden');
+        return;
+      }
+      
+      supabase.auth.signUp({ email, password }).then(({ data: { user }, error }) => {
+        if (error) {
+          userError.innerText = `Sign Up Error: ${error.message}`;
+          userError.classList.remove('hidden');
+        } else {
+          userSuccess.innerText = "Registration complete! Check your email inbox to verify account credentials.";
+          userSuccess.classList.remove('hidden');
+        }
+      });
+    });
+  }
+  
+  // Save & Test Supabase keys inside settings drawer
+  const saveDbBtn = document.getElementById('settings-save-db-btn');
+  const settingsUrl = document.getElementById('settings-supabase-url');
+  const settingsKey = document.getElementById('settings-supabase-key');
+  const settingsFeedback = document.getElementById('settings-sync-feedback');
+  
+  if (saveDbBtn && settingsUrl && settingsKey && settingsFeedback) {
+    saveDbBtn.addEventListener('click', () => {
+      settingsFeedback.classList.add('hidden');
+      const url = settingsUrl.value.trim();
+      const key = settingsKey.value.trim();
+      
+      if (!url || !key) {
+        settingsFeedback.className = "auth-message-box error";
+        settingsFeedback.innerText = "Please provide both Project URL and Public Anon Key.";
+        settingsFeedback.classList.remove('hidden');
+        return;
+      }
+      
+      try {
+        localStorage.setItem('mktg_supabase_url', url);
+        localStorage.setItem('mktg_supabase_key', key);
+        
+        // Re-initialize supabase client
+        supabase = window.supabase.createClient(url, key);
+        
+        settingsFeedback.className = "auth-message-box success";
+        settingsFeedback.innerText = "Connection credentials saved successfully! Reloading portal...";
+        settingsFeedback.classList.remove('hidden');
+        
+        setTimeout(() => {
+          initAuthAndSync();
+        }, 1500);
+      } catch (e) {
+        settingsFeedback.className = "auth-message-box error";
+        settingsFeedback.innerText = `Configuration Error: ${e.message}`;
+        settingsFeedback.classList.remove('hidden');
+      }
+    });
+  }
+  
+  // Sign Out button
+  const signoutBtn = document.getElementById('settings-signout-btn');
+  if (signoutBtn) {
+    signoutBtn.addEventListener('click', () => {
+      // Clear local admin session
+      localStorage.removeItem(LOCAL_ADMIN_KEY);
+      activeSession = null;
+      
+      // Call supabase sign out if active
+      if (supabase) {
+        supabase.auth.signOut().then(() => {
+          updateAuthUI();
+          showLoginOverlay();
+        });
+      } else {
+        updateAuthUI();
+        showLoginOverlay();
+      }
+    });
+  }
+}
+
