@@ -6,11 +6,6 @@ let currentChapterData = null;
 let userProgress = {}; // Key: chapterId, Value: { completed: boolean, quizScore: number }
 let activeLearningProfile = 'general';
 
-// Authentication & Database Sync Variables
-let supabase = null;
-let activeSession = null; // Supabase user object or local admin object
-const LOCAL_ADMIN_KEY = 'mktg_academy_admin_session';
-
 // DOM Elements
 const sidebarNav = document.getElementById('sidebar-nav');
 const welcomeScreen = document.getElementById('welcome-screen');
@@ -31,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCurriculum();
   setupEventListeners();
   updateProgressUI();
-  initAuthAndSync();
 });
 
 // Load and Apply Theme from LocalStorage
@@ -1012,8 +1006,6 @@ function setupSearch() {
 
 // Setup Event Listeners
 function setupEventListeners() {
-  setupAuthEventListeners();
-  
   // Mobile Sidebar Toggle
   toggleSidebarBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1866,345 +1858,270 @@ function renderPersonaFocusContent(data) {
   }
 }
 
-// ==========================================
-// Supabase Authentication & Cloud Sync Core
-// ==========================================
+// ============================================================
+// DOWNLOAD NOTES FUNCTION
+// Generates a beautifully formatted HTML notes document from
+// the current chapter's full data and triggers a download.
+// ============================================================
+function downloadChapterNotes() {
+  if (!currentChapterData) {
+    alert('Please select a chapter first.');
+    return;
+  }
 
-// Initialize Auth & Synchronization
-function initAuthAndSync() {
-  const url = localStorage.getItem('mktg_supabase_url');
-  const key = localStorage.getItem('mktg_supabase_key');
-  
-  // Populate settings fields if saved
-  const settingsUrlInput = document.getElementById('settings-supabase-url');
-  const settingsKeyInput = document.getElementById('settings-supabase-key');
-  if (settingsUrlInput && url) settingsUrlInput.value = url;
-  if (settingsKeyInput && key) settingsKeyInput.value = key;
-  
-  if (url && key && window.supabase) {
-    try {
-      supabase = window.supabase.createClient(url, key);
-    } catch (e) {
-      console.error("Failed to initialize Supabase client:", e);
-    }
+  const d = currentChapterData;
+  const chapterNum = d.id || activeChapterId;
+
+  // Build definitions HTML
+  const defsHtml = (d.definitions || []).map(def => `
+    <div class="notes-def-card">
+      <div class="notes-def-term">${def.term}</div>
+      <div class="notes-def-body">${def.definition}</div>
+      <div class="notes-def-source">— ${def.source || 'Kotler & Armstrong'}</div>
+    </div>`).join('');
+
+  // Build learning objectives
+  const objHtml = (d.learningObjectives || []).map((o, i) =>
+    `<li><span class="lo-num">LO ${i+1}</span> ${o}</li>`).join('');
+
+  // Build frameworks
+  const fwHtml = (d.frameworks || []).map(f => `
+    <div class="notes-framework">
+      <h4>${f.name}</h4>
+      <p>${f.explanation}</p>
+      ${f.components ? `<ul>${f.components.map(c => `<li>${c}</li>`).join('')}</ul>` : ''}
+    </div>`).join('');
+
+  // Build examples
+  const ex = d.examples || {};
+  const exHtml = `
+    ${ex.realWorld ? `<div class="notes-example"><strong>Real World:</strong> ${ex.realWorld}</div>` : ''}
+    ${ex.industry ? `<div class="notes-example"><strong>Industry:</strong> ${ex.industry}</div>` : ''}
+    ${ex.indianCase ? `<div class="notes-case india"><span>🇮🇳 Indian Case: ${ex.indianCase.title}</span><p>${ex.indianCase.details}</p></div>` : ''}
+    ${ex.globalCase ? `<div class="notes-case global"><span>🌍 Global Case: ${ex.globalCase.title}</span><p>${ex.globalCase.details}</p></div>` : ''}`;
+
+  // Build interview questions
+  const iqHtml = ((d.assessments || {}).interviewQuestions || []).map((q, i) => `
+    <div class="notes-q">
+      <div class="notes-q-label">Q${i+1}</div>
+      <div><strong>${q.question}</strong><p class="notes-ans">${q.answer}</p></div>
+    </div>`).join('');
+
+  // Build MCQs
+  const mcqHtml = (d.masteryAssessment || []).map((q, i) => `
+    <div class="notes-mcq">
+      <p><strong>MCQ ${i+1}:</strong> ${q.question}</p>
+      <ul>${q.options.map((o, oi) => `<li class="${oi === q.correct ? 'correct-opt' : ''}">${oi === q.correct ? '✓ ' : ''}${o}</li>`).join('')}</ul>
+      <p class="notes-exp"><em>Explanation: ${q.explanation}</em></p>
+    </div>`).join('');
+
+  // Build common mistakes
+  const mistakesHtml = (d.commonMistakes || []).map(m => `<li>⚠️ ${m}</li>`).join('');
+
+  // Build practical applications
+  const practicalHtml = (d.practicalApplications || []).map(p => `<li>✅ ${p}</li>`).join('');
+
+  // Build crosslinks
+  const crossHtml = (d.crossLinks || []).map(c => `<li><strong>${c.chapter}:</strong> ${c.connection}</li>`).join('');
+
+  // Build memory techniques
+  const memHtml = (d.memoryTechniques || []).map(m => `
+    <div class="notes-mnemonic">
+      <span class="mnem-badge">${m.type}</span>
+      <strong>${m.name}</strong>: ${m.details}
+    </div>`).join('');
+
+  // Build comparison table
+  const compTable = d.comparisonTables || {};
+  const tableHtml = compTable.headers ? `
+    <table class="notes-table">
+      <thead><tr>${compTable.headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${(compTable.rows || []).map(row => `<tr>${row.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>` : '';
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter ${chapterNum}: ${d.title} — Study Notes</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f8f7f4; color: #1a1a2e; padding: 2rem; line-height: 1.7; font-size: 14px; }
+  .notes-doc { max-width: 860px; margin: 0 auto; background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+  .notes-header { border-bottom: 3px solid #cca04c; padding-bottom: 1.5rem; margin-bottom: 2rem; }
+  .notes-source { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+  .notes-chapter-num { font-family: 'Outfit', sans-serif; font-size: 0.9rem; font-weight: 700; color: #cca04c; text-transform: uppercase; letter-spacing: 2px; }
+  h1 { font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 800; color: #0f1924; line-height: 1.2; margin: 0.5rem 0 1rem; }
+  h2 { font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700; color: #0f1924; border-left: 4px solid #cca04c; padding-left: 0.75rem; margin: 2rem 0 1rem; }
+  h3 { font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 700; color: #333; margin: 1.25rem 0 0.5rem; }
+  h4 { font-size: 0.9rem; font-weight: 700; color: #444; margin-bottom: 0.35rem; }
+  p { margin-bottom: 0.6rem; color: #333; }
+  ul { padding-left: 1.2rem; margin-bottom: 0.75rem; }
+  li { margin-bottom: 0.35rem; }
+  .section { margin-bottom: 2.5rem; }
+  .section-divider { border: none; border-top: 1px solid #eee; margin: 2rem 0; }
+  /* Objectives */
+  .notes-obj-list { list-style: none; padding: 0; }
+  .notes-obj-list li { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.6rem 0.75rem; background: #f8f6ff; border-radius: 6px; margin-bottom: 0.5rem; }
+  .lo-num { background: #6c47ff; color: white; font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; flex-shrink: 0; }
+  /* Definitions */
+  .notes-def-card { background: #fffbf0; border: 1px solid #f0d89a; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; }
+  .notes-def-term { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1rem; color: #7a5100; margin-bottom: 0.3rem; }
+  .notes-def-body { color: #333; }
+  .notes-def-source { font-size: 0.75rem; color: #aaa; margin-top: 0.3rem; }
+  /* Frameworks */
+  .notes-framework { background: #f0f8ff; border-left: 3px solid #4e9af1; padding: 1rem; border-radius: 0 8px 8px 0; margin-bottom: 0.75rem; }
+  /* Examples */
+  .notes-example { background: #f4f4f4; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; }
+  .notes-case { padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; }
+  .notes-case.india { background: #fff8f0; border: 1px solid #f0c88a; }
+  .notes-case.global { background: #f0f8ff; border: 1px solid #a0c8f0; }
+  .notes-case span { display: block; font-weight: 700; margin-bottom: 0.3rem; }
+  /* Questions */
+  .notes-q { display: flex; gap: 0.75rem; background: #f9f9ff; border-radius: 8px; padding: 0.9rem; margin-bottom: 0.6rem; }
+  .notes-q-label { background: #1a1a2e; color: #cca04c; font-weight: 700; font-size: 0.78rem; padding: 0.25rem 0.5rem; border-radius: 4px; height: fit-content; flex-shrink: 0; }
+  .notes-ans { color: #555; font-size: 0.88rem; margin-top: 0.3rem; }
+  /* MCQ */
+  .notes-mcq { background: #f8f8f8; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; }
+  .notes-mcq ul { list-style: none; padding-left: 0; }
+  .notes-mcq li { padding: 0.3rem 0.5rem; border-radius: 4px; }
+  .correct-opt { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+  .notes-exp { background: #fffde7; padding: 0.5rem 0.75rem; border-radius: 4px; margin-top: 0.5rem; font-size: 0.85rem; }
+  /* Mnemonic */
+  .notes-mnemonic { display: flex; gap: 0.5rem; align-items: flex-start; background: #f5f0ff; padding: 0.7rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; }
+  .mnem-badge { background: #7c3aed; color: white; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.4rem; border-radius: 4px; flex-shrink: 0; }
+  /* Table */
+  .notes-table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+  .notes-table th { background: #1a1a2e; color: #cca04c; padding: 0.6rem 0.8rem; text-align: left; font-size: 0.85rem; }
+  .notes-table td { padding: 0.5rem 0.8rem; border-bottom: 1px solid #eee; font-size: 0.87rem; }
+  .notes-table tr:nth-child(even) td { background: #f9f9f9; }
+  /* Footer */
+  .notes-footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; text-align: center; font-size: 0.75rem; color: #aaa; }
+  @media print {
+    body { background: white; padding: 0; }
+    .notes-doc { box-shadow: none; padding: 1.5rem; }
   }
-  
-  // Check local Admin session first
-  const savedAdmin = localStorage.getItem(LOCAL_ADMIN_KEY);
-  if (savedAdmin) {
-    try {
-      activeSession = JSON.parse(savedAdmin);
-      hideLoginOverlay();
-      updateAuthUI();
-      return;
-    } catch (e) {
-      localStorage.removeItem(LOCAL_ADMIN_KEY);
-    }
-  }
-  
-  // Check Supabase session next
-  if (supabase) {
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (session && !error) {
-        activeSession = session.user;
-        hideLoginOverlay();
-        updateAuthUI();
-        syncProgressFromCloud();
-      } else {
-        showLoginOverlay();
-      }
-    }).catch(err => {
-      console.warn("Supabase Auth session fetch failed, showing portal.", err);
-      showLoginOverlay();
-    });
-  } else {
-    showLoginOverlay();
-  }
+</style>
+</head>
+<body>
+<div class="notes-doc">
+
+  <div class="notes-header">
+    <div class="notes-source">📚 Kotler & Armstrong — Principles of Marketing, 17th Global Edition</div>
+    <div class="notes-chapter-num">Chapter ${chapterNum}</div>
+    <h1>${d.title}</h1>
+    <p style="color:#666; font-size:0.85rem;">Complete Study Notes · Marketing Mastery Academy · Generated ${new Date().toLocaleDateString('en-IN', {day:'numeric', month:'long', year:'numeric'})}</p>
+  </div>
+
+  <div class="section">
+    <h2>📋 Learning Objectives</h2>
+    <ul class="notes-obj-list">${objHtml}</ul>
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="section">
+    <h2>🔑 Key Definitions</h2>
+    ${defsHtml || '<p>See textbook for key term definitions.</p>'}
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="section">
+    <h2>💡 Intuition & Analogy</h2>
+    ${d.intuition ? `
+      <div class="notes-example"><strong>Analogy:</strong> ${d.intuition.analogy}</div>
+      <div class="notes-example"><strong>Story:</strong> ${d.intuition.story}</div>` : ''}
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="section">
+    <h2>🏗️ Frameworks & Models</h2>
+    ${fwHtml || '<p>See textbook chapter for detailed framework breakdowns.</p>'}
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="section">
+    <h2>📊 Comparison Table</h2>
+    ${tableHtml || '<p>Refer to the Visual Mapping tab for comparison data.</p>'}
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="section">
+    <h2>🌍 Real-World & Case Examples</h2>
+    ${exHtml}
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="section">
+    <h2>🛠️ Practical Applications</h2>
+    <ul>${practicalHtml}</ul>
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="section">
+    <h2>⚠️ Common Mistakes</h2>
+    <ul>${mistakesHtml}</ul>
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="section">
+    <h2>🧠 Memory Techniques</h2>
+    ${memHtml || '<p>Use the S-A-T-E mnemonic: Situation → Align → Tactics → Evaluate.</p>'}
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="section">
+    <h2>🔗 Cross-Links to Other Chapters</h2>
+    <ul>${crossHtml}</ul>
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="section">
+    <h2>🎤 Interview Questions & Model Answers</h2>
+    ${iqHtml || '<p>Prepare using the key concepts and definitions from this chapter.</p>'}
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="section">
+    <h2>📝 MCQ Practice</h2>
+    ${mcqHtml || '<p>Refer to the Mastery Assessment tab for MCQs.</p>'}
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="section">
+    <h2>⚡ One-Page Revision Summary</h2>
+    <div style="background:#f8f8f8; padding:1.25rem; border-radius:8px; white-space:pre-wrap; font-size:0.9rem;">${(d.onePageRevision || '').replace(/##/g,'').replace(/\*\*/g,'').replace(/\*/g,'')}</div>
+  </div>
+
+  <div class="notes-footer">
+    Marketing Mastery Academy · Based on Kotler & Armstrong Principles of Marketing · For personal educational use only
+  </div>
+
+</div>
+</body>
+</html>`;
+
+  // Trigger download
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Chapter_${chapterNum}_${d.title.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 40)}_Notes.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
-
-// Show/Hide Login Overlay
-function showLoginOverlay() {
-  const overlay = document.getElementById('login-portal-overlay');
-  if (overlay) overlay.classList.remove('hidden');
-}
-
-function hideLoginOverlay() {
-  const overlay = document.getElementById('login-portal-overlay');
-  if (overlay) overlay.classList.add('hidden');
-}
-
-// Update settings and auth labels
-function updateAuthUI() {
-  const statusLabel = document.getElementById('settings-sync-status');
-  const profileInfo = document.getElementById('settings-profile-info');
-  const profileEmail = document.getElementById('settings-profile-email');
-  const profileRole = document.getElementById('settings-profile-role');
-  
-  if (!statusLabel) return;
-  
-  if (activeSession) {
-    if (activeSession.email.endsWith('@academy.local')) {
-      // Local Admin Mode
-      statusLabel.className = 'status-indicator local';
-      statusLabel.innerHTML = `<i class="fa-solid fa-user-shield"></i> Local Admin Mode`;
-      
-      if (profileInfo && profileEmail && profileRole) {
-        profileInfo.classList.remove('hidden');
-        profileEmail.innerText = activeSession.email;
-        profileRole.innerText = activeSession.role;
-      }
-    } else {
-      // Cloud Supabase Mode
-      statusLabel.className = 'status-indicator cloud';
-      statusLabel.innerHTML = `<i class="fa-solid fa-cloud-check" style="color: var(--secondary);"></i> Cloud Synchronized`;
-      
-      if (profileInfo && profileEmail && profileRole) {
-        profileInfo.classList.remove('hidden');
-        profileEmail.innerText = activeSession.email;
-        profileRole.innerText = 'Authenticated User';
-      }
-    }
-  } else {
-    statusLabel.className = 'status-indicator local';
-    statusLabel.innerHTML = `<i class="fa-solid fa-circle-check"></i> Local Offline Mode`;
-    if (profileInfo) profileInfo.classList.add('hidden');
-  }
-}
-
-// Fetch user data from Supabase DB and merge
-function syncProgressFromCloud() {
-  if (!supabase || !activeSession || activeSession.email.endsWith('@academy.local')) return;
-  
-  supabase
-    .from('academy_progress')
-    .select('chapter_id, completed, quiz_score')
-    .eq('user_id', activeSession.id)
-    .then(({ data, error }) => {
-      if (!error && data) {
-        data.forEach(row => {
-          userProgress[row.chapter_id] = {
-            completed: row.completed,
-            quizScore: row.quiz_score
-          };
-        });
-        localStorage.setItem('mktg_academy_progress', JSON.stringify(userProgress));
-        updateProgressUI();
-        renderCurriculum();
-        // Reload currently selected chapter view if active
-        if (activeChapterId) {
-          selectChapter(activeChapterId);
-        }
-      } else {
-        console.warn("Could not sync progress from Supabase cloud database.", error);
-      }
-    });
-}
-
-// Upload/Sync single progress record to Supabase
-function syncRecordToCloud(chapterId, completed, quizScore) {
-  if (!supabase || !activeSession || activeSession.email.endsWith('@academy.local')) return;
-  
-  supabase
-    .from('academy_progress')
-    .upsert({
-      user_id: activeSession.id,
-      chapter_id: parseInt(chapterId),
-      completed: completed,
-      quiz_score: parseInt(quizScore)
-    }, { onConflict: 'user_id,chapter_id' })
-    .then(({ error }) => {
-      if (error) {
-        console.error("Supabase upsert failed:", error);
-      }
-    });
-}
-
-// Override Save Progress to include cloud sync hooks
-const originalSaveProgress = saveProgress;
-saveProgress = function() {
-  originalSaveProgress();
-  if (activeSession && !activeSession.email.endsWith('@academy.local')) {
-    Object.keys(userProgress).forEach(chId => {
-      const record = userProgress[chId];
-      syncRecordToCloud(chId, record.completed, record.quizScore);
-    });
-  }
-};
-
-// Register auth UI interactions and credentials handling
-function setupAuthEventListeners() {
-  const tabUser = document.getElementById('tab-btn-user');
-  const tabAdmin = document.getElementById('tab-btn-admin');
-  const sectionUser = document.getElementById('login-user-section');
-  const sectionAdmin = document.getElementById('login-admin-section');
-  
-  // Tab Switcher
-  if (tabUser && tabAdmin && sectionUser && sectionAdmin) {
-    tabUser.addEventListener('click', () => {
-      tabUser.classList.add('active');
-      tabAdmin.classList.remove('active');
-      sectionUser.classList.remove('hidden');
-      sectionAdmin.classList.add('hidden');
-    });
-    tabAdmin.addEventListener('click', () => {
-      tabAdmin.classList.add('active');
-      tabUser.classList.remove('active');
-      sectionAdmin.classList.remove('hidden');
-      sectionUser.classList.add('hidden');
-    });
-  }
-  
-  // Local Admin Bypass Authentication
-  const adminBypassBtn = document.getElementById('admin-bypass-btn');
-  const adminIdInput = document.getElementById('admin-id');
-  const adminPassInput = document.getElementById('admin-password');
-  const adminError = document.getElementById('admin-auth-error');
-  
-  if (adminBypassBtn && adminIdInput && adminPassInput && adminError) {
-    adminBypassBtn.addEventListener('click', () => {
-      const adminId = adminIdInput.value.trim();
-      const adminPass = adminPassInput.value.trim();
-      
-      if (adminId === 'admin' && adminPass === 'admin123') {
-        adminError.classList.add('hidden');
-        const sessionObj = {
-          email: 'admin@academy.local',
-          role: 'System Administrator'
-        };
-        localStorage.setItem(LOCAL_ADMIN_KEY, JSON.stringify(sessionObj));
-        activeSession = sessionObj;
-        hideLoginOverlay();
-        updateAuthUI();
-      } else {
-        adminError.innerText = 'Authentication Failed: Invalid local admin credentials.';
-        adminError.classList.remove('hidden');
-      }
-    });
-  }
-  
-  // Supabase User Sign In
-  const userSigninBtn = document.getElementById('user-signin-btn');
-  const userSignupBtn = document.getElementById('user-signup-btn');
-  const userEmailInput = document.getElementById('user-email');
-  const userPassInput = document.getElementById('user-password');
-  const userError = document.getElementById('user-auth-error');
-  const userSuccess = document.getElementById('user-auth-success');
-  
-  if (userSigninBtn && userEmailInput && userPassInput && userError && userSuccess) {
-    userSigninBtn.addEventListener('click', () => {
-      userError.classList.add('hidden');
-      userSuccess.classList.add('hidden');
-      
-      const email = userEmailInput.value.trim();
-      const password = userPassInput.value.trim();
-      
-      if (!supabase) {
-        userError.innerText = "Connection Error: Supabase client is not configured. Input Project credentials in Settings drawer.";
-        userError.classList.remove('hidden');
-        return;
-      }
-      
-      supabase.auth.signInWithPassword({ email, password }).then(({ data: { session }, error }) => {
-        if (error) {
-          userError.innerText = `Sign In Error: ${error.message}`;
-          userError.classList.remove('hidden');
-        } else if (session) {
-          activeSession = session.user;
-          hideLoginOverlay();
-          updateAuthUI();
-          syncProgressFromCloud();
-        }
-      });
-    });
-  }
-  
-  // Supabase User Sign Up
-  if (userSignupBtn && userEmailInput && userPassInput && userError && userSuccess) {
-    userSignupBtn.addEventListener('click', () => {
-      userError.classList.add('hidden');
-      userSuccess.classList.add('hidden');
-      
-      const email = userEmailInput.value.trim();
-      const password = userPassInput.value.trim();
-      
-      if (!supabase) {
-        userError.innerText = "Connection Error: Supabase client is not configured. Input Project credentials in Settings drawer.";
-        userError.classList.remove('hidden');
-        return;
-      }
-      
-      supabase.auth.signUp({ email, password }).then(({ data: { user }, error }) => {
-        if (error) {
-          userError.innerText = `Sign Up Error: ${error.message}`;
-          userError.classList.remove('hidden');
-        } else {
-          userSuccess.innerText = "Registration complete! Check your email inbox to verify account credentials.";
-          userSuccess.classList.remove('hidden');
-        }
-      });
-    });
-  }
-  
-  // Save & Test Supabase keys inside settings drawer
-  const saveDbBtn = document.getElementById('settings-save-db-btn');
-  const settingsUrl = document.getElementById('settings-supabase-url');
-  const settingsKey = document.getElementById('settings-supabase-key');
-  const settingsFeedback = document.getElementById('settings-sync-feedback');
-  
-  if (saveDbBtn && settingsUrl && settingsKey && settingsFeedback) {
-    saveDbBtn.addEventListener('click', () => {
-      settingsFeedback.classList.add('hidden');
-      const url = settingsUrl.value.trim();
-      const key = settingsKey.value.trim();
-      
-      if (!url || !key) {
-        settingsFeedback.className = "auth-message-box error";
-        settingsFeedback.innerText = "Please provide both Project URL and Public Anon Key.";
-        settingsFeedback.classList.remove('hidden');
-        return;
-      }
-      
-      try {
-        localStorage.setItem('mktg_supabase_url', url);
-        localStorage.setItem('mktg_supabase_key', key);
-        
-        // Re-initialize supabase client
-        supabase = window.supabase.createClient(url, key);
-        
-        settingsFeedback.className = "auth-message-box success";
-        settingsFeedback.innerText = "Connection credentials saved successfully! Reloading portal...";
-        settingsFeedback.classList.remove('hidden');
-        
-        setTimeout(() => {
-          initAuthAndSync();
-        }, 1500);
-      } catch (e) {
-        settingsFeedback.className = "auth-message-box error";
-        settingsFeedback.innerText = `Configuration Error: ${e.message}`;
-        settingsFeedback.classList.remove('hidden');
-      }
-    });
-  }
-  
-  // Sign Out button
-  const signoutBtn = document.getElementById('settings-signout-btn');
-  if (signoutBtn) {
-    signoutBtn.addEventListener('click', () => {
-      // Clear local admin session
-      localStorage.removeItem(LOCAL_ADMIN_KEY);
-      activeSession = null;
-      
-      // Call supabase sign out if active
-      if (supabase) {
-        supabase.auth.signOut().then(() => {
-          updateAuthUI();
-          showLoginOverlay();
-        });
-      } else {
-        updateAuthUI();
-        showLoginOverlay();
-      }
-    });
-  }
-}
-
