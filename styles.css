@@ -205,6 +205,21 @@ body {
   text-shadow: 0 0 12px var(--primary-glow);
 }
 
+/* Logo image in sidebar */
+.sidebar-logo-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 2px solid hsla(40, 60%, 55%, 0.4);
+  box-shadow: 0 0 12px hsla(40, 60%, 55%, 0.2);
+  transition: box-shadow 0.3s ease;
+  flex-shrink: 0;
+}
+.sidebar-logo:hover .sidebar-logo-img {
+  box-shadow: 0 0 20px hsla(40, 60%, 55%, 0.5);
+}
+
 .sidebar-logo span {
   font-family: var(--font-heading);
   font-weight: 700;

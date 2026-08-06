@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mktg-academy-cache-v1';
+const CACHE_NAME = 'mktg-academy-cache-v2';
 const ASSETS = [
   'index.html',
   'styles.css',
@@ -8,6 +8,12 @@ const ASSETS = [
   'data/chapter_01.js',
   'data/chapter_02.js',
   'data/chapter_07.js',
+  'images/logos/logo-active.jpg',
+  'images/logos/logo_1_gold_badge.jpg',
+  'images/logos/logo_2_modern_minimal.jpg',
+  'images/logos/logo_3_nebula_cosmic.jpg',
+  'images/logos/logo_4_corporate_premium.jpg',
+  'images/logos/logo_5_cyber_terminal.jpg',
   'images/icon-192.png',
   'images/icon-512.png',
   'images/figure_1_1_marketing_process.jpg',
