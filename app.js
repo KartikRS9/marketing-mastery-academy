@@ -6,6 +6,138 @@ let currentChapterData = null;
 let userProgress = {}; // Key: chapterId, Value: { completed: boolean, quizScore: number }
 let activeLearningProfile = 'general';
 
+// ============================================================
+// TTS ENGINE — Text-to-Speech using Web Speech API
+// ============================================================
+const TTS = {
+  synth: window.speechSynthesis,
+  voices: [],
+  activeBtn: null,
+  utterance: null,
+
+  init() {
+    if (!this.synth) return;
+    const loadVoices = () => {
+      this.voices = this.synth.getVoices();
+      const sel = document.getElementById('tts-voice-select');
+      if (!sel) return;
+      sel.innerHTML = '';
+      // Prefer English voices first
+      const eng = this.voices.filter(v => v.lang.startsWith('en'));
+      const others = this.voices.filter(v => !v.lang.startsWith('en'));
+      [...eng, ...others].forEach((v, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = `${v.name} (${v.lang})`;
+        if (v.default) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    };
+    if (this.synth.onvoiceschanged !== undefined) {
+      this.synth.onvoiceschanged = loadVoices;
+    }
+    loadVoices();
+
+    // Controls
+    document.getElementById('tts-stop-btn')?.addEventListener('click', () => this.stop());
+    document.getElementById('tts-pause-btn')?.addEventListener('click', () => this.togglePause());
+    document.getElementById('tts-speed-select')?.addEventListener('change', (e) => {
+      if (this.utterance) this.utterance.rate = parseFloat(e.target.value);
+    });
+  },
+
+  speak(text, label, btnEl) {
+    if (!this.synth) return;
+    this.stop();
+
+    // Clean text — strip HTML tags and excessive whitespace
+    const clean = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!clean) return;
+
+    this.utterance = new SpeechSynthesisUtterance(clean);
+    this.utterance.rate = parseFloat(document.getElementById('tts-speed-select')?.value || 1);
+    this.utterance.pitch = 1;
+
+    // Pick selected voice
+    const sel = document.getElementById('tts-voice-select');
+    if (sel && this.voices.length > 0) {
+      const idx = parseInt(sel.value) || 0;
+      this.utterance.voice = this.voices[idx] || this.voices[0];
+    }
+
+    this.utterance.onstart = () => {
+      this.showBar(label);
+      if (btnEl) {
+        this.activeBtn = btnEl;
+        btnEl.classList.add('tts-active');
+        btnEl.innerHTML = '<i class="fa-solid fa-stop"></i> Stop';
+      }
+    };
+
+    this.utterance.onend = () => this.onEnd();
+    this.utterance.onerror = () => this.onEnd();
+
+    this.synth.speak(this.utterance);
+  },
+
+  stop() {
+    this.synth.cancel();
+    this.onEnd();
+  },
+
+  togglePause() {
+    const icon = document.getElementById('tts-pause-icon');
+    if (this.synth.paused) {
+      this.synth.resume();
+      if (icon) { icon.className = 'fa-solid fa-pause'; }
+    } else {
+      this.synth.pause();
+      if (icon) { icon.className = 'fa-solid fa-play'; }
+    }
+  },
+
+  onEnd() {
+    document.getElementById('tts-player-bar')?.classList.add('hidden');
+    document.body.classList.remove('tts-playing');
+    if (this.activeBtn) {
+      this.activeBtn.classList.remove('tts-active');
+      this.activeBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Listen';
+      this.activeBtn = null;
+    }
+    const icon = document.getElementById('tts-pause-icon');
+    if (icon) icon.className = 'fa-solid fa-pause';
+  },
+
+  showBar(label) {
+    const bar = document.getElementById('tts-player-bar');
+    const lbl = document.getElementById('tts-track-label');
+    if (bar) bar.classList.remove('hidden');
+    if (lbl) lbl.textContent = label || 'Reading…';
+    document.body.classList.add('tts-playing');
+  },
+
+  // Inject a speaker button next to a text block
+  btn(text, label) {
+    const id = 'tts-' + Math.random().toString(36).substr(2, 8);
+    // Use a data attribute to avoid inline JS issues
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('click', () => {
+          if (el.classList.contains('tts-active')) {
+            this.stop();
+          } else {
+            this.speak(text, label, el);
+          }
+        });
+      }
+    }, 100);
+    return `<button class="tts-speak-btn" id="${id}" title="Listen to this section"><i class="fa-solid fa-volume-high"></i> Listen</button>`;
+  }
+};
+
+
+
 // DOM Elements
 const sidebarNav = document.getElementById('sidebar-nav');
 const welcomeScreen = document.getElementById('welcome-screen');
@@ -21,6 +153,7 @@ const startLearningBtn = document.getElementById('start-learning-btn');
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
   loadProgress();
+  TTS.init();
   loadTheme();
   loadLearningProfile();
   renderCurriculum();
@@ -297,10 +430,12 @@ function renderCoreTab(data) {
     const badgeClass = isTextbook ? 'textbook-badge' : 'insight-badge';
     const sourceIcon = isTextbook ? 'fa-book' : 'fa-lightbulb';
     
+    const ttsBtnDef = TTS.btn(`${def.term}. ${def.definition}`, def.term);
     card.innerHTML = `
       <div class="def-header">
         <span class="def-term">${def.term}</span>
         <span class="legend-badge def-source ${badgeClass}"><i class="fa-solid ${sourceIcon}"></i> ${def.source}</span>
+        ${ttsBtnDef}
       </div>
       <p class="def-text">${def.definition}</p>
     `;
@@ -309,9 +444,10 @@ function renderCoreTab(data) {
 
   // Intuition Analogy
   const intuitionDiv = document.getElementById('core-intuition');
+  const ttsIntuitionText = `Analogy: ${data.intuition.analogy}. ${data.intuition.story}`;
   intuitionDiv.innerHTML = `
     <div class="intuition-analogy">
-      <h4>Intuitive Analogy:</h4>
+      <h4>Intuitive Analogy: ${TTS.btn(ttsIntuitionText, 'Intuition & Analogy')}</h4>
       ${data.intuition.analogy}
     </div>
     <p class="intuition-story">${data.intuition.story}</p>
@@ -338,8 +474,9 @@ function renderCoreTab(data) {
       stepsHtml += `</div>`;
     }
 
+    const ttsFwText = `${fw.name}. ${fw.explanation}. ${fw.components ? fw.components.join('. ') : ''}`;
     card.innerHTML = `
-      <h4>${fw.name}</h4>
+      <h4>${fw.name} ${TTS.btn(ttsFwText, fw.name)}</h4>
       <p class="framework-desc">${fw.explanation}</p>
       ${stepsHtml}
     `;
@@ -556,10 +693,15 @@ function renderAcademicTab(data) {
     qas.forEach((qa, idx) => {
       const item = document.createElement('div');
       item.className = 'accordion-item';
+      const ttsQaText = `Question: ${qa.question}. Answer: ${qa.answer}`;
+      const ttsBtnQa = TTS.btn(ttsQaText, `Q${idx + 1}: ${qa.question.substring(0,50)}`);
       item.innerHTML = `
         <button class="accordion-header">
           <span>Q${idx + 1}: ${qa.question}</span>
-          <i class="fa-solid fa-chevron-down accordion-icon"></i>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            ${ttsBtnQa}
+            <i class="fa-solid fa-chevron-down accordion-icon"></i>
+          </div>
         </button>
         <div class="accordion-content">
           <div class="accordion-answer">${qa.answer}</div>
@@ -1395,6 +1537,11 @@ function showLessonFocus(lessonTitle) {
       visualCaption.innerHTML = '';
     }
   }
+  
+  // Add TTS button alongside the lesson title
+  const ttsBtnHtml = TTS.btn(summary, lessonTitle);
+  title.innerHTML = `${lessonTitle} ${ttsBtnHtml}`;
+  desc.innerText = summary;
   
   card.classList.remove('hidden');
   card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

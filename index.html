@@ -45,6 +45,33 @@
 </head>
 <body>
 
+  <!-- ===== TTS FLOATING PLAYER BAR ===== -->
+  <div id="tts-player-bar" class="tts-player-bar hidden">
+    <div class="tts-player-inner">
+      <button class="tts-ctrl-btn" id="tts-stop-btn" title="Stop"><i class="fa-solid fa-stop"></i></button>
+      <button class="tts-ctrl-btn" id="tts-pause-btn" title="Pause / Resume"><i class="fa-solid fa-pause" id="tts-pause-icon"></i></button>
+      <div class="tts-track-info">
+        <i class="fa-solid fa-volume-high tts-vol-icon"></i>
+        <span id="tts-track-label">Reading…</span>
+      </div>
+      <div class="tts-speed-wrap">
+        <label class="tts-speed-label">Speed</label>
+        <select id="tts-speed-select" class="tts-speed-select">
+          <option value="0.8">0.8×</option>
+          <option value="1" selected>1×</option>
+          <option value="1.25">1.25×</option>
+          <option value="1.5">1.5×</option>
+          <option value="1.75">1.75×</option>
+          <option value="2">2×</option>
+        </select>
+      </div>
+      <div class="tts-voice-wrap">
+        <label class="tts-speed-label">Voice</label>
+        <select id="tts-voice-select" class="tts-speed-select" style="max-width:140px;"></select>
+      </div>
+    </div>
+  </div>
+
   <!-- Dashboard Container -->
   <div class="dashboard-container">
     

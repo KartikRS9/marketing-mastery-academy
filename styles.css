@@ -2371,3 +2371,173 @@ body, aside, main, header, .card, button, input, textarea, .timeline-node, .time
     gap: 1rem;
   }
 }
+
+/* ============================================================
+   TTS (Text-to-Speech) PLAYER BAR & SPEAKER BUTTONS
+   ============================================================ */
+
+/* Floating player bar — fixed at top of viewport */
+.tts-player-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: linear-gradient(135deg, #0d1117 0%, #1a1f2e 100%);
+  border-bottom: 2px solid var(--primary, #cca04c);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  padding: 0.5rem 1.5rem;
+  animation: slideDownBar 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+@keyframes slideDownBar {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.tts-player-bar.hidden { display: none; }
+
+/* When bar is visible, push main content down */
+body.tts-playing .dashboard-container {
+  margin-top: 56px;
+}
+
+.tts-player-inner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+/* Stop / Pause buttons */
+.tts-ctrl-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--primary, #cca04c);
+  background: transparent;
+  color: var(--primary, #cca04c);
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.tts-ctrl-btn:hover {
+  background: var(--primary, #cca04c);
+  color: #0a0c10;
+  transform: scale(1.1);
+}
+
+/* Track info area */
+.tts-track-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+.tts-vol-icon {
+  color: var(--primary, #cca04c);
+  font-size: 1rem;
+  flex-shrink: 0;
+  animation: tts-pulse 1s ease-in-out infinite alternate;
+}
+@keyframes tts-pulse {
+  from { opacity: 0.5; }
+  to   { opacity: 1;   }
+}
+#tts-track-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  color: #eae6df;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 400px;
+}
+
+/* Speed & Voice selects */
+.tts-speed-wrap, .tts-voice-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+.tts-speed-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #9e9b95;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.tts-speed-select {
+  background: #1a1f2e;
+  border: 1px solid hsla(220,15%,30%,0.8);
+  color: #eae6df;
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  max-width: 80px;
+}
+
+/* ============================================================
+   SPEAKER BUTTONS (inline, on each content block)
+   ============================================================ */
+.tts-speak-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: transparent;
+  border: 1px solid hsla(40, 60%, 55%, 0.35);
+  color: var(--primary, #cca04c);
+  border-radius: 20px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  vertical-align: middle;
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+}
+.tts-speak-btn:hover {
+  background: hsla(40, 60%, 55%, 0.15);
+  border-color: var(--primary, #cca04c);
+  transform: scale(1.05);
+}
+.tts-speak-btn.tts-active {
+  background: var(--primary, #cca04c);
+  color: #0a0c10;
+  border-color: var(--primary, #cca04c);
+}
+.tts-speak-btn i { font-size: 0.7rem; }
+
+/* Section-level speak button (larger, shown in heading row) */
+.tts-section-btn {
+  float: right;
+  margin-top: 0.1rem;
+}
+
+/* Light theme overrides */
+body.theme-nordic-minimal .tts-player-bar {
+  background: #f0f2f5;
+  border-bottom-color: #333;
+}
+body.theme-nordic-minimal #tts-track-label { color: #1a1a2e; }
+body.theme-nordic-minimal .tts-ctrl-btn { border-color: #333; color: #333; }
+body.theme-nordic-minimal .tts-speed-select { background: #fff; color: #333; border-color: #ccc; }
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+  .tts-voice-wrap { display: none; }
+  #tts-track-label { max-width: 140px; }
+  .tts-player-inner { gap: 0.6rem; }
+}
+
