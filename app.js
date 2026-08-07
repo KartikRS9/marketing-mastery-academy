@@ -177,8 +177,7 @@ function applyThemeClass(themeName) {
     'theme-editorial',
     'theme-deep-ocean',
     'theme-parchment',
-    'theme-saas',
-    'theme-soft-paper'
+    'theme-saas'
   );
   // Add selected theme class (body default = obsidian, no class needed but add for consistency)
   document.body.classList.add(`theme-${themeName}`);
@@ -195,7 +194,7 @@ function applyThemeClass(themeName) {
 function updateToggleIcon(themeName) {
   const toggleBtn = document.getElementById('theme-toggle-btn');
   if (!toggleBtn) return;
-  const isLight = ['editorial', 'parchment', 'saas', 'soft-paper'].includes(themeName);
+  const isLight = ['editorial', 'parchment', 'saas'].includes(themeName);
   
   if (isLight) {
     toggleBtn.innerHTML = '<i class="fa-solid fa-moon"></i>';
@@ -1165,7 +1164,7 @@ function setupEventListeners() {
   if (toggleBtn) {
     toggleBtn.addEventListener('click', () => {
       const currentTheme = localStorage.getItem('mktg_academy_theme') || 'obsidian';
-      const isLight = ['editorial', 'parchment', 'saas', 'soft-paper'].includes(currentTheme);
+      const isLight = ['editorial', 'parchment', 'saas'].includes(currentTheme);
       
       const nextTheme = isLight ? 'obsidian' : 'parchment';
       
