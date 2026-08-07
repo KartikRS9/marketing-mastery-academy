@@ -128,9 +128,16 @@
           <div class="theme-selector-container">
             <label for="theme-select" class="theme-select-label"><i class="fa-solid fa-palette"></i> Theme:</label>
             <select id="theme-select" class="theme-select-dropdown">
-              <option value="obsidian">🖤 Obsidian Scholar</option>
-              <option value="editorial">📰 Editorial Light</option>
-              <option value="deep-ocean">🌊 Deep Ocean</option>
+              <optgroup label="Dark Themes">
+                <option value="obsidian">🖤 Obsidian Scholar (Default)</option>
+                <option value="deep-ocean">🌊 Deep Ocean</option>
+              </optgroup>
+              <optgroup label="Light Themes">
+                <option value="editorial">📰 Editorial Light</option>
+                <option value="parchment">📜 Parchment Academy</option>
+                <option value="saas">🚀 Clean SaaS</option>
+                <option value="soft-paper">🍵 Soft Paper</option>
+              </optgroup>
             </select>
           </div>
           <button class="theme-toggle-btn" id="theme-toggle-btn" title="Toggle Day/Night Mode">

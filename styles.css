@@ -163,6 +163,135 @@ body.theme-deep-ocean {
   --radius-lg: 16px;
 }
 
+/* ── THEME D: PARCHMENT ACADEMY (Light) ── */
+body.theme-parchment {
+  --bg-main:        #fdfbf7;
+  --bg-sidebar:     #f5f1e8;
+  --bg-card:        #ffffff;
+  --bg-card-hover:  #faf8f4;
+  --bg-input:       #f5f1e8;
+  --border-card:    #e5dfd3;
+  --border-hover:   #b8905b;
+  --border-subtle:  #f0ebe1;
+
+  --primary:        #9e1b1b;          /* Crimson Red */
+  --primary-dim:    #7a1515;
+  --primary-glow:   hsla(0,71%,36%,0.08);
+  --secondary:      #b8905b;          /* Classic Gold */
+  --secondary-glow: hsla(34,39%,54%,0.10);
+  --accent:         #1d3557;          /* Navy */
+  --accent-glow:    hsla(215,50%,23%,0.10);
+  
+  --success:        #2b7a42;
+  --warning:        #b8905b;
+  --danger:         #9e1b1b;
+
+  --text-primary:   #2b2927;
+  --text-secondary: #5c5853;
+  --text-muted:     #8f8981;
+  --text-accent:    #9e1b1b;
+
+  --shadow-sm:  0 1px 3px rgba(43,41,39,0.05), 0 1px 2px rgba(43,41,39,0.03);
+  --shadow-md:  0 4px 16px rgba(43,41,39,0.06), 0 2px 6px rgba(43,41,39,0.04);
+  --shadow-lg:  0 20px 40px rgba(43,41,39,0.08), 0 8px 16px rgba(43,41,39,0.05);
+  --shadow-glow: 0 0 0 2px rgba(158,27,27,0.08);
+  --card-accent-bar: #9e1b1b;
+
+  --font-heading: 'Playfair Display', Georgia, serif;
+  --font-body:    'Inter', -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --backdrop-blur: none;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+/* ── THEME E: CLEAN SAAS (Light) ── */
+body.theme-saas {
+  --bg-main:        #f8f9fa;
+  --bg-sidebar:     #ffffff;
+  --bg-card:        #ffffff;
+  --bg-card-hover:  #f8f9fa;
+  --bg-input:       #f1f3f5;
+  --border-card:    #e9ecef;
+  --border-hover:   #339af0;
+  --border-subtle:  #f1f3f5;
+
+  --primary:        #228be6;          /* Electric Blue */
+  --primary-dim:    #1c7ed6;
+  --primary-glow:   hsla(208,80%,52%,0.12);
+  --secondary:      #12b886;          /* Teal */
+  --secondary-glow: hsla(162,82%,40%,0.10);
+  --accent:         #7950f2;          /* Purple */
+  --accent-glow:    hsla(255,86%,63%,0.10);
+  
+  --success:        #12b886;
+  --warning:        #fab005;
+  --danger:         #fa5252;
+
+  --text-primary:   #212529;
+  --text-secondary: #495057;
+  --text-muted:     #868e96;
+  --text-accent:    #228be6;
+
+  --shadow-sm:  0 1px 3px rgba(33,37,41,0.04), 0 1px 2px rgba(33,37,41,0.02);
+  --shadow-md:  0 4px 12px rgba(33,37,41,0.06), 0 2px 4px rgba(33,37,41,0.04);
+  --shadow-lg:  0 16px 32px rgba(33,37,41,0.08), 0 8px 16px rgba(33,37,41,0.04);
+  --shadow-glow: 0 0 0 2px rgba(34,139,230,0.1);
+  --card-accent-bar: #228be6;
+
+  --font-heading: 'Outfit', 'Inter', sans-serif;
+  --font-body:    'Inter', -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --backdrop-blur: none;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}
+
+/* ── THEME F: SOFT PAPER (Light) ── */
+body.theme-soft-paper {
+  --bg-main:        #f3f2f0;
+  --bg-sidebar:     #ebeae7;
+  --bg-card:        #f9f8f7;
+  --bg-card-hover:  #f0efec;
+  --bg-input:       #e5e3e0;
+  --border-card:    #dfddda;
+  --border-hover:   #6b8e6b;
+  --border-subtle:  #e8e7e4;
+
+  --primary:        #6b8e6b;          /* Soft Sage */
+  --primary-dim:    #5a7a5a;
+  --primary-glow:   hsla(120,14%,49%,0.10);
+  --secondary:      #d97d7d;          /* Soft Coral */
+  --secondary-glow: hsla(0,55%,67%,0.10);
+  --accent:         #6b7a8e;          /* Muted Blue */
+  --accent-glow:    hsla(214,14%,49%,0.10);
+  
+  --success:        #6b8e6b;
+  --warning:        #d9b07d;
+  --danger:         #d97d7d;
+
+  --text-primary:   #404245;
+  --text-secondary: #65696d;
+  --text-muted:     #9a9da1;
+  --text-accent:    #6b8e6b;
+
+  --shadow-sm:  0 1px 3px rgba(64,66,69,0.03), 0 1px 2px rgba(64,66,69,0.02);
+  --shadow-md:  0 4px 16px rgba(64,66,69,0.05), 0 2px 6px rgba(64,66,69,0.03);
+  --shadow-lg:  0 20px 40px rgba(64,66,69,0.06), 0 8px 16px rgba(64,66,69,0.04);
+  --shadow-glow: 0 0 0 2px rgba(107,142,107,0.1);
+  --card-accent-bar: #6b8e6b;
+
+  --font-heading: 'Outfit', 'Inter', sans-serif;
+  --font-body:    'Inter', -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --backdrop-blur: none;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+}
+
 
   --bg-dark: hsl(220, 15%, 8%);
 /* ── Global Reset & Base ── */
