@@ -22,14 +22,28 @@ const TTS = {
       const sel = document.getElementById('tts-voice-select');
       if (!sel) return;
       sel.innerHTML = '';
-      // Prefer English voices first
-      const eng = this.voices.filter(v => v.lang.startsWith('en'));
+      // Prioritize Indian English, then other English, then others
+      const indian = this.voices.filter(v => v.lang.toLowerCase() === 'en-in' || v.name.toLowerCase().includes('india'));
+      const eng = this.voices.filter(v => v.lang.startsWith('en') && v.lang.toLowerCase() !== 'en-in' && !v.name.toLowerCase().includes('india'));
       const others = this.voices.filter(v => !v.lang.startsWith('en'));
-      [...eng, ...others].forEach((v, i) => {
+      
+      const sortedVoices = [...indian, ...eng, ...others];
+      
+      // Update global voices array to match dropdown order so indexing works correctly
+      this.voices = sortedVoices;
+      
+      let defaultSet = false;
+      this.voices.forEach((v, i) => {
         const opt = document.createElement('option');
         opt.value = i;
         opt.textContent = `${v.name} (${v.lang})`;
-        if (v.default) opt.selected = true;
+        
+        // Select first Indian voice as default, or fallback to system default
+        if (!defaultSet && (indian.includes(v) || v.default)) {
+          opt.selected = true;
+          defaultSet = true;
+        }
+        
         sel.appendChild(opt);
       });
     };

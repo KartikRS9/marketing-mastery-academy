@@ -900,6 +900,8 @@ body {
 
 .tab-btn {
   flex-grow: 1;
+  flex-shrink: 0;
+  white-space: nowrap;
   background: none;
   border: none;
   border-radius: var(--radius-sm, 8px);
@@ -1777,7 +1779,7 @@ body {
   }
   
   .toggle-sidebar-btn {
-    display: block;
+    display: flex;
   }
   
   .two-col-grid {
@@ -2699,8 +2701,27 @@ body.tts-playing .dashboard-container {
 
 /* Mobile adjustments */
 @media (max-width: 600px) {
-  .tts-voice-wrap { display: none; }
-  #tts-track-label { max-width: 140px; }
-  .tts-player-inner { gap: 0.6rem; }
+  .tts-player-inner {
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    justify-content: center;
+  }
+  
+  #tts-track-label {
+    max-width: 100%;
+    text-align: center;
+  }
+  
+  .tts-track-info {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .tts-voice-wrap, .tts-speed-wrap {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
