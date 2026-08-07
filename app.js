@@ -163,11 +163,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Load and Apply Theme from LocalStorage
 function loadTheme() {
-  const savedTheme = localStorage.getItem('mktg_academy_theme') || 'chalkboard';
+  const savedTheme = localStorage.getItem('mktg_academy_theme') || 'obsidian';
   const themeSelect = document.getElementById('theme-select');
-  if (themeSelect) {
-    themeSelect.value = savedTheme;
-  }
+  if (themeSelect) themeSelect.value = savedTheme;
   applyThemeClass(savedTheme);
 }
 
@@ -175,38 +173,31 @@ function loadTheme() {
 function applyThemeClass(themeName) {
   // Remove all theme classes
   document.body.classList.remove(
-    'theme-chalkboard',
-    'theme-nebula-dark',
-    'theme-nordic-minimal',
-    'theme-cyber-terminal'
+    'theme-obsidian',
+    'theme-editorial',
+    'theme-deep-ocean'
   );
-  
-  // Add selected theme class
+  // Add selected theme class (body default = obsidian, no class needed but add for consistency)
   document.body.classList.add(`theme-${themeName}`);
-  
-  // Update toggle button icon
+  localStorage.setItem('mktg_academy_theme', themeName);
   updateToggleIcon(themeName);
-  
-  // Re-run Mermaid styling overrides if active tab is Visual Mapping
+  // Re-run Mermaid if visual tab active
   const activeTabBtn = document.querySelector('.tab-btn.active');
   if (activeTabBtn && activeTabBtn.dataset.tab === 'visual-mapping' && currentChapterData) {
     renderMermaidDiagrams(currentChapterData);
   }
 }
 
-// Update the day/night toggle button icon dynamically
+// Update day/night toggle icon
 function updateToggleIcon(themeName) {
   const toggleBtn = document.getElementById('theme-toggle-btn');
-  if (toggleBtn) {
-    if (themeName === 'nordic-minimal') {
-      // Light Mode is active, show moon icon for toggling to Night
-      toggleBtn.innerHTML = '<i class="fa-solid fa-moon"></i>';
-      toggleBtn.title = 'Switch to Night Mode';
-    } else {
-      // Dark Mode is active, show sun icon for toggling to Day
-      toggleBtn.innerHTML = '<i class="fa-solid fa-sun"></i>';
-      toggleBtn.title = 'Switch to Day Mode';
-    }
+  if (!toggleBtn) return;
+  if (themeName === 'editorial') {
+    toggleBtn.innerHTML = '<i class="fa-solid fa-moon"></i>';
+    toggleBtn.title = 'Switch to Dark Mode';
+  } else {
+    toggleBtn.innerHTML = '<i class="fa-solid fa-sun"></i>';
+    toggleBtn.title = 'Switch to Light Mode';
   }
 }
 
@@ -1168,21 +1159,11 @@ function setupEventListeners() {
   const toggleBtn = document.getElementById('theme-toggle-btn');
   if (toggleBtn) {
     toggleBtn.addEventListener('click', () => {
-      const currentTheme = localStorage.getItem('mktg_academy_theme') || 'chalkboard';
-      let nextTheme;
-      if (currentTheme === 'nordic-minimal') {
-        nextTheme = 'chalkboard';
-      } else {
-        nextTheme = 'nordic-minimal';
-      }
-      
-      localStorage.setItem('mktg_academy_theme', nextTheme);
+      const currentTheme = localStorage.getItem('mktg_academy_theme') || 'obsidian';
+      const nextTheme = currentTheme === 'editorial' ? 'obsidian' : 'editorial';
       applyThemeClass(nextTheme);
-      
       const themeSelect = document.getElementById('theme-select');
-      if (themeSelect) {
-        themeSelect.value = nextTheme;
-      }
+      if (themeSelect) themeSelect.value = nextTheme;
     });
   }
 
