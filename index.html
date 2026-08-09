@@ -7,10 +7,10 @@
   <!-- Favicon -->
   <link rel="icon" type="image/jpeg" href="images/logos/logo-active.jpg">
   <link rel="apple-touch-icon" href="images/logos/logo-active.jpg">
-  <!-- Google Fonts: Outfit (headings) & Inter (body) -->
+  <!-- Google Fonts: EB Garamond (headings) & Inter (body) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Tailwind/Vanilla Core Stylesheet -->
@@ -48,6 +48,15 @@
 </head>
 <body>
 
+  <!-- Atmospheric Gradient Orbs (Editorial Theme Signature) -->
+  <div class="atmospheric-orbs">
+    <div class="orb orb-mint"></div>
+    <div class="orb orb-peach"></div>
+    <div class="orb orb-lavender"></div>
+    <div class="orb orb-sky"></div>
+    <div class="orb orb-rose"></div>
+  </div>
+
   <!-- ===== TTS FLOATING PLAYER BAR ===== -->
   <div id="tts-player-bar" class="tts-player-bar hidden">
     <div class="tts-player-inner">
@@ -66,6 +75,12 @@
           <option value="1.5">1.5×</option>
           <option value="1.75">1.75×</option>
           <option value="2">2×</option>
+        </select>
+      </div>
+      <div class="tts-voice-wrap">
+        <label class="tts-speed-label">Engine</label>
+        <select id="tts-engine-select" class="tts-speed-select" style="max-width:100px;">
+          <option value="all">All Engines</option>
         </select>
       </div>
       <div class="tts-voice-wrap">
@@ -128,14 +143,13 @@
           <div class="theme-selector-container">
             <label for="theme-select" class="theme-select-label"><i class="fa-solid fa-palette"></i> Theme:</label>
             <select id="theme-select" class="theme-select-dropdown">
-              <optgroup label="Dark Themes">
-                <option value="obsidian">🖤 Obsidian Scholar (Default)</option>
-                <option value="deep-ocean">🌊 Deep Ocean</option>
-              </optgroup>
               <optgroup label="Light Themes">
-                <option value="saas">🚀 Clean SaaS</option>
-                <option value="parchment">📜 Parchment Academy</option>
-                <option value="soft-paper">🍵 Soft Paper</option>
+                <option value="editorial">☀️ Editorial Classic (ElevenLabs)</option>
+                <option value="corporate">☀️ Vibrant Corporate (Stripe)</option>
+              </optgroup>
+              <optgroup label="Dark Themes">
+                <option value="linear">🌙 Linear Minimal (Space Gray)</option>
+                <option value="gaming">🌙 Bubbly Gaming (Discord)</option>
               </optgroup>
             </select>
           </div>
@@ -197,10 +211,12 @@
               <h2 class="chapter-title" id="chapter-title">Chapter Title</h2>
               <p class="chapter-part-subtitle" id="chapter-part-subtitle">Part Name</p>
             </div>
-            <button class="download-notes-btn" id="download-notes-btn" onclick="downloadChapterNotes()">
-              <i class="fa-solid fa-file-arrow-down"></i> Download Notes
-            </button>
-          </div>
+            <div style="display: flex; gap: 10px;">
+              <div id="chapter-tts-container"></div>
+              <button class="download-notes-btn" id="download-notes-btn" onclick="downloadChapterNotes()">
+                <i class="fa-solid fa-file-arrow-down"></i> Download Notes
+              </button>
+            </div>
         </div>
 
         <!-- Lessons Breadcrumb / Timeline Slider -->

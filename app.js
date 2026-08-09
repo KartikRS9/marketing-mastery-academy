@@ -18,34 +18,31 @@ const TTS = {
   init() {
     if (!this.synth) return;
     const loadVoices = () => {
-      this.voices = this.synth.getVoices();
-      const sel = document.getElementById('tts-voice-select');
-      if (!sel) return;
-      sel.innerHTML = '';
-      // Prioritize Indian English, then other English, then others
-      const indian = this.voices.filter(v => v.lang.toLowerCase() === 'en-in' || v.name.toLowerCase().includes('india'));
-      const eng = this.voices.filter(v => v.lang.startsWith('en') && v.lang.toLowerCase() !== 'en-in' && !v.name.toLowerCase().includes('india'));
-      const others = this.voices.filter(v => !v.lang.startsWith('en'));
+      this.allVoices = this.synth.getVoices();
       
-      const sortedVoices = [...indian, ...eng, ...others];
-      
-      // Update global voices array to match dropdown order so indexing works correctly
-      this.voices = sortedVoices;
-      
-      let defaultSet = false;
-      this.voices.forEach((v, i) => {
-        const opt = document.createElement('option');
-        opt.value = i;
-        opt.textContent = `${v.name} (${v.lang})`;
+      // Populate Engine Selector
+      const engineSel = document.getElementById('tts-engine-select');
+      if (engineSel && engineSel.options.length <= 1 && this.allVoices.length > 0) {
+        const engines = new Set();
+        this.allVoices.forEach(v => {
+          let engineName = 'Other';
+          if (v.name.includes('Google')) engineName = 'Google';
+          else if (v.name.includes('Microsoft')) engineName = 'Microsoft';
+          else if (v.name.includes('Apple')) engineName = 'Apple';
+          engines.add(engineName);
+        });
         
-        // Select first Indian voice as default, or fallback to system default
-        if (!defaultSet && (indian.includes(v) || v.default)) {
-          opt.selected = true;
-          defaultSet = true;
-        }
+        Array.from(engines).sort().forEach(eng => {
+          const opt = document.createElement('option');
+          opt.value = eng;
+          opt.textContent = eng;
+          engineSel.appendChild(opt);
+        });
         
-        sel.appendChild(opt);
-      });
+        engineSel.addEventListener('change', () => this.filterAndRenderVoices());
+      }
+      
+      this.filterAndRenderVoices();
     };
     if (this.synth.onvoiceschanged !== undefined) {
       this.synth.onvoiceschanged = loadVoices;
@@ -57,6 +54,49 @@ const TTS = {
     document.getElementById('tts-pause-btn')?.addEventListener('click', () => this.togglePause());
     document.getElementById('tts-speed-select')?.addEventListener('change', (e) => {
       if (this.utterance) this.utterance.rate = parseFloat(e.target.value);
+    });
+  },
+
+  filterAndRenderVoices() {
+    const sel = document.getElementById('tts-voice-select');
+    const engineSel = document.getElementById('tts-engine-select');
+    if (!sel || !this.allVoices) return;
+    
+    sel.innerHTML = '';
+    const selectedEngine = engineSel ? engineSel.value : 'all';
+    
+    let filteredVoices = this.allVoices;
+    if (selectedEngine !== 'all') {
+      filteredVoices = this.allVoices.filter(v => {
+        if (selectedEngine === 'Google') return v.name.includes('Google');
+        if (selectedEngine === 'Microsoft') return v.name.includes('Microsoft');
+        if (selectedEngine === 'Apple') return v.name.includes('Apple');
+        return !v.name.includes('Google') && !v.name.includes('Microsoft') && !v.name.includes('Apple');
+      });
+    }
+
+    // Prioritize Indian English, Hinglish (hi-IN), Maralish (mr-IN)
+    const indian = filteredVoices.filter(v => {
+      const l = v.lang.toLowerCase();
+      const n = v.name.toLowerCase();
+      return l === 'en-in' || l === 'hi-in' || l === 'mr-in' || n.includes('india') || n.includes('hindi') || n.includes('marathi');
+    });
+    const eng = filteredVoices.filter(v => v.lang.startsWith('en') && !indian.includes(v));
+    const others = filteredVoices.filter(v => !indian.includes(v) && !eng.includes(v));
+    
+    this.voices = [...indian, ...eng, ...others];
+    
+    let defaultSet = false;
+    this.voices.forEach((v, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `${v.name} (${v.lang})`;
+      
+      if (!defaultSet && (indian.includes(v) || v.default)) {
+        opt.selected = true;
+        defaultSet = true;
+      }
+      sel.appendChild(opt);
     });
   },
 
@@ -177,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Load and Apply Theme from LocalStorage
 function loadTheme() {
-  const savedTheme = localStorage.getItem('mktg_academy_theme') || 'obsidian';
+  const savedTheme = localStorage.getItem('mktg_academy_theme') || 'editorial';
   const themeSelect = document.getElementById('theme-select');
   if (themeSelect) themeSelect.value = savedTheme;
   applyThemeClass(savedTheme);
@@ -186,11 +226,10 @@ function loadTheme() {
 // Apply selected theme class to document body
 function applyThemeClass(themeName) {
   document.body.classList.remove(
-    'theme-obsidian',
-    'theme-deep-ocean',
-    'theme-parchment',
-    'theme-saas',
-    'theme-soft-paper'
+    'theme-editorial',
+    'theme-corporate',
+    'theme-linear',
+    'theme-gaming'
   );
   // Add selected theme class (body default = obsidian, no class needed but add for consistency)
   document.body.classList.add(`theme-${themeName}`);
@@ -207,7 +246,7 @@ function applyThemeClass(themeName) {
 function updateToggleIcon(themeName) {
   const toggleBtn = document.getElementById('theme-toggle-btn');
   if (!toggleBtn) return;
-  const isLight = ['parchment', 'saas', 'soft-paper'].includes(themeName);
+  const isLight = ['editorial', 'corporate'].includes(themeName);
   
   if (isLight) {
     toggleBtn.innerHTML = '<i class="fa-solid fa-moon"></i>';
@@ -362,6 +401,15 @@ function renderChapterView(data, partName) {
   // Title and Header info
   document.getElementById('chapter-title').innerText = `Chapter ${data.id}: ${data.title}`;
   document.getElementById('chapter-part-subtitle').innerText = partName;
+  
+  const ttsContainer = document.getElementById('chapter-tts-container');
+  if (ttsContainer) {
+    let fullText = `Chapter ${data.id}: ${data.title}. `;
+    if (data.learningObjectives) fullText += `Learning Objectives: ${data.learningObjectives.join('. ')}. `;
+    if (data.keyDefinitions) fullText += `Key Definitions: ${data.keyDefinitions.map(d => `${d.term} is ${d.definition}`).join('. ')}. `;
+    if (data.keyFrameworks) fullText += `Key Frameworks: ${data.keyFrameworks.map(f => `${f.name}: ${f.explanation}`).join('. ')}. `;
+    ttsContainer.innerHTML = TTS.btn(fullText, `Chapter ${data.id}`);
+  }
 
   // Render Active Persona Focus Panel
   renderPersonaFocusContent(data);
@@ -417,14 +465,15 @@ function renderCoreTab(data) {
   objectivesUl.innerHTML = '';
   data.learningObjectives.forEach(obj => {
     const li = document.createElement('li');
-    li.innerText = obj;
+    li.innerHTML = `${obj} ${TTS.btn(obj, 'Objective')}`;
     objectivesUl.appendChild(li);
   });
 
   // First Principles
   const fpDiv = document.getElementById('core-first-principles');
+  const ttsFp = TTS.btn(`${data.firstPrinciples.statement}. ${data.firstPrinciples.explanation}`, 'First Principles');
   fpDiv.innerHTML = `
-    <div class="fp-quote">${data.firstPrinciples.statement}</div>
+    <div class="fp-quote">${data.firstPrinciples.statement} ${ttsFp}</div>
     <p class="fp-text">${data.firstPrinciples.explanation}</p>
   `;
 
@@ -514,7 +563,8 @@ function renderCoreTab(data) {
   crossUl.innerHTML = '';
   data.crossLinks.forEach(link => {
     const li = document.createElement('li');
-    li.innerHTML = `<strong>${link.chapter}:</strong> ${link.connection}`;
+    const txt = `${link.chapter}: ${link.connection}`;
+    li.innerHTML = `<strong>${link.chapter}:</strong> ${link.connection} ${TTS.btn(txt, 'Cross-Link')}`;
     crossUl.appendChild(li);
   });
 
@@ -524,8 +574,9 @@ function renderCoreTab(data) {
   data.memoryTechniques.forEach(tech => {
     const card = document.createElement('div');
     card.className = 'memory-card';
+    const txt = `${tech.name}, ${tech.type}. ${tech.details}`;
     card.innerHTML = `
-      <div class="memory-name"><i class="fa-solid fa-brain"></i> ${tech.name} (${tech.type})</div>
+      <div class="memory-name"><i class="fa-solid fa-brain"></i> ${tech.name} (${tech.type}) ${TTS.btn(txt, tech.name)}</div>
       <p class="memory-desc">${tech.details}</p>
     `;
     memoryDiv.appendChild(card);
@@ -655,20 +706,20 @@ function renderVisualTab(data) {
 // Tab 3: Cases Rendering
 function renderCasesTab(data) {
   // Snippets
-  document.getElementById('cases-real-world').innerText = data.examples.realWorld;
-  document.getElementById('cases-industry').innerText = data.examples.industry;
+  document.getElementById('cases-real-world').innerHTML = `${data.examples.realWorld} ${TTS.btn(data.examples.realWorld, 'Real World')}`;
+  document.getElementById('cases-industry').innerHTML = `${data.examples.industry} ${TTS.btn(data.examples.industry, 'Industry')}`;
 
   // Indian Case study
   const indianCaseDiv = document.getElementById('cases-indian-case');
   indianCaseDiv.innerHTML = `
-    <h4 class="case-study-title">${data.examples.indianCase.title}</h4>
+    <h4 class="case-study-title">${data.examples.indianCase.title} ${TTS.btn(data.examples.indianCase.title + '. ' + data.examples.indianCase.details, 'Indian Case Study')}</h4>
     <p class="case-study-details">${data.examples.indianCase.details}</p>
   `;
 
   // Global Case Study
   const globalCaseDiv = document.getElementById('cases-global-case');
   globalCaseDiv.innerHTML = `
-    <h4 class="case-study-title">${data.examples.globalCase.title}</h4>
+    <h4 class="case-study-title">${data.examples.globalCase.title} ${TTS.btn(data.examples.globalCase.title + '. ' + data.examples.globalCase.details, 'Global Case Study')}</h4>
     <p class="case-study-details">${data.examples.globalCase.details}</p>
   `;
 
@@ -677,7 +728,7 @@ function renderCasesTab(data) {
   practicalUl.innerHTML = '';
   data.practicalApplications.forEach(app => {
     const li = document.createElement('li');
-    li.innerText = app;
+    li.innerHTML = `${app} ${TTS.btn(app, 'Application')}`;
     practicalUl.appendChild(li);
   });
 
@@ -686,7 +737,7 @@ function renderCasesTab(data) {
   mistakesUl.innerHTML = '';
   data.commonMistakes.forEach(mistake => {
     const li = document.createElement('li');
-    li.innerText = mistake;
+    li.innerHTML = `${mistake} ${TTS.btn(mistake, 'Common Mistake')}`;
     mistakesUl.appendChild(li);
   });
 }
@@ -744,8 +795,8 @@ function renderAcademicTab(data) {
   renderAccordion('academic-mba-questions', data.assessments.mbaQuestions);
 
   // Practice Exercises and Assignments Text
-  document.getElementById('academic-exercises').innerText = data.assessments.practiceExercises.join('\n\n');
-  document.getElementById('academic-assignments').innerText = data.assessments.assignments.join('\n\n');
+  document.getElementById('academic-exercises').innerHTML = `${data.assessments.practiceExercises.join('<br><br>')} <div class="mt-3">${TTS.btn(data.assessments.practiceExercises.join('. '), 'Exercises')}</div>`;
+  document.getElementById('academic-assignments').innerHTML = `${data.assessments.assignments.join('<br><br>')} <div class="mt-3">${TTS.btn(data.assessments.assignments.join('. '), 'Assignments')}</div>`;
 
   // Scenario Caselets
   const scenarioContainer = document.getElementById('academic-scenarios');
@@ -753,8 +804,9 @@ function renderAcademicTab(data) {
   data.assessments.scenarioQuestions.forEach((s, idx) => {
     const card = document.createElement('div');
     card.className = 'scenario-card';
+    const ttsScenario = TTS.btn(`${s.scenario}. Question: ${s.question}. Analysis: ${s.analysis}`, `Scenario ${idx + 1}`);
     card.innerHTML = `
-      <div class="scenario-heading">Scenario ${idx + 1}: ${s.scenario.substring(0, 45)}...</div>
+      <div class="scenario-heading">Scenario ${idx + 1}: ${s.scenario.substring(0, 45)}... ${ttsScenario}</div>
       <p class="scenario-text">${s.scenario}</p>
       <div class="scenario-query"><strong>Question:</strong> ${s.question}</div>
       <button class="btn btn-secondary btn-sm" id="show-analysis-btn-${idx}">Show Model Analysis</button>
@@ -776,7 +828,7 @@ function renderAcademicTab(data) {
 // Tab 5: Review & Mastery Rendering
 function renderReviewTab(data) {
   // One Page Revision
-  document.getElementById('review-one-page').innerHTML = formatMarkdown(data.onePageRevision);
+  document.getElementById('review-one-page').innerHTML = formatMarkdown(data.onePageRevision) + `<div class="mt-3">${TTS.btn(data.onePageRevision, 'One Page Revision')}</div>`;
 
   // Feynman Review
   const feynmanText = document.getElementById('feynman-text');
@@ -1176,10 +1228,10 @@ function setupEventListeners() {
   const toggleBtn = document.getElementById('theme-toggle-btn');
   if (toggleBtn) {
     toggleBtn.addEventListener('click', () => {
-      const currentTheme = localStorage.getItem('mktg_academy_theme') || 'obsidian';
-      const isLight = ['parchment', 'saas', 'soft-paper'].includes(currentTheme);
+      const currentTheme = localStorage.getItem('mktg_academy_theme') || 'editorial';
+      const isLight = ['editorial', 'corporate'].includes(currentTheme);
       
-      const nextTheme = isLight ? 'obsidian' : 'saas';
+      const nextTheme = isLight ? 'linear' : 'editorial';
       
       applyThemeClass(nextTheme);
       const themeSelect = document.getElementById('theme-select');
