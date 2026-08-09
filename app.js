@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Load and Apply Theme from LocalStorage
 function loadTheme() {
-  const savedTheme = localStorage.getItem('mktg_academy_theme') || 'editorial';
+  const savedTheme = localStorage.getItem('mktg_academy_theme') || 'corporate';
   const themeSelect = document.getElementById('theme-select');
   if (themeSelect) themeSelect.value = savedTheme;
   applyThemeClass(savedTheme);
@@ -1228,7 +1228,7 @@ function setupEventListeners() {
   const toggleBtn = document.getElementById('theme-toggle-btn');
   if (toggleBtn) {
     toggleBtn.addEventListener('click', () => {
-      const currentTheme = localStorage.getItem('mktg_academy_theme') || 'editorial';
+      const currentTheme = localStorage.getItem('mktg_academy_theme') || 'corporate';
       const isLight = ['editorial', 'corporate'].includes(currentTheme);
       
       const nextTheme = isLight ? 'linear' : 'editorial';

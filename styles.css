@@ -28,6 +28,12 @@ body.theme-editorial {
   --accent:         #78716c;
   --accent-glow:    rgba(120, 113, 108, 0.1);
   
+  --orb-1-color:    rgba(167,243,208,0.8);
+  --orb-2-color:    rgba(253,186,116,0.5);
+  --orb-3-color:    rgba(196,181,253,0.6);
+  --orb-4-color:    rgba(186,230,253,0.6);
+  --orb-5-color:    rgba(254,205,211,0.5);
+  
   --success:        #2b7a42;
   --warning:        #b8905b;
   --danger:         #9e1b1b;
@@ -76,6 +82,12 @@ body.theme-corporate {
   --secondary-glow: rgba(10, 37, 64, 0.1);
   --accent:         #00d4ff;          /* Cyan */
   --accent-glow:    rgba(0, 212, 255, 0.15);
+  
+  --orb-1-color:    rgba(99,91,255,0.5);
+  --orb-2-color:    rgba(0,212,255,0.4);
+  --orb-3-color:    rgba(10,37,64,0.3);
+  --orb-4-color:    rgba(0,217,36,0.4);
+  --orb-5-color:    rgba(99,91,255,0.4);
   
   --success:        #00d924;
   --warning:        #ffb000;
@@ -126,6 +138,12 @@ body.theme-linear {
   --accent:         #38bdf8;          /* Light blue */
   --accent-glow:    rgba(56, 189, 248, 0.15);
   
+  --orb-1-color:    rgba(255,255,255,0.06);
+  --orb-2-color:    rgba(200,200,200,0.09);
+  --orb-3-color:    rgba(150,150,150,0.07);
+  --orb-4-color:    rgba(100,100,100,0.06);
+  --orb-5-color:    rgba(255,255,255,0.05);
+  
   --success:        #34d399;
   --warning:        #fbbf24;
   --danger:         #f87171;
@@ -170,10 +188,16 @@ body.theme-gaming {
   --primary:        #5865F2;          /* Blurple */
   --primary-dim:    #4752C4;
   --primary-glow:   rgba(88, 101, 242, 0.2);
-  --secondary:      #EB459E;          /* Pink */
-  --secondary-glow: rgba(235, 69, 158, 0.2);
-  --accent:         #FEE75C;          /* Yellow */
-  --accent-glow:    rgba(254, 231, 92, 0.15);
+  --secondary:      #2b2d31;
+  --secondary-glow: rgba(43, 45, 49, 0.2);
+  --accent:         #EB459E;          /* Magenta */
+  --accent-glow:    rgba(235, 69, 158, 0.25);
+  
+  --orb-1-color:    rgba(88,101,242,0.4);
+  --orb-2-color:    rgba(235,69,158,0.3);
+  --orb-3-color:    rgba(87,242,135,0.3);
+  --orb-4-color:    rgba(254,231,92,0.2);
+  --orb-5-color:    rgba(88,101,242,0.35);
   
   --success:        #57F287;
   --warning:        #FEE75C;
@@ -782,7 +806,7 @@ body {
   gap: 0.5rem;
   padding: 0.6rem 1.2rem;
   background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-  color: #0a0c10;
+  color: var(--bg-main);
   border: none;
   border-radius: 8px;
   font-family: var(--font-heading);
@@ -845,12 +869,13 @@ body {
 
 /* Tabs Navigation */
 .tabs-nav-container {
-  background: hsla(220, 20%, 12%, 0.8);
-  border: 1px solid var(--border-card);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 12px;
   padding: 0.35rem;
   margin-bottom: 2rem;
-  backdrop-filter: blur(8px);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
 
 .tabs-nav {
@@ -1023,7 +1048,7 @@ body {
   font-style: italic;
   border-left: 4px solid var(--secondary);
   padding-left: 1rem;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .fp-text {
@@ -1103,7 +1128,7 @@ body {
 
 .intuition-analogy h4 {
   font-family: var(--font-heading);
-  color: var(--secondary);
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   font-weight: 700;
 }
@@ -2139,8 +2164,8 @@ body, aside, main, header, .card, button, input, textarea, .timeline-node, .time
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 1px;
-  background: var(--secondary-glow);
-  color: var(--secondary);
+  background: var(--accent-glow);
+  color: var(--accent);
   padding: 0.25rem 0.6rem;
   border-radius: 4px;
   display: inline-flex;
@@ -2701,42 +2726,38 @@ body.tts-playing .dashboard-container {
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 1s ease-in-out;
-}
-body.theme-editorial .atmospheric-orbs {
-  opacity: 1;
+  opacity: 1; /* Always on for all themes */
 }
 .orb {
   position: absolute;
   border-radius: 50%;
   filter: blur(100px);
   animation: float 20s infinite alternate ease-in-out;
-  opacity: 0.6;
+  opacity: 0.8;
 }
 .orb-mint {
   width: 40vw; height: 40vw; top: -10vw; left: -10vw;
-  background: radial-gradient(circle, rgba(167,243,208,0.8) 0%, rgba(167,243,208,0) 70%);
+  background: radial-gradient(circle, var(--orb-1-color) 0%, transparent 70%);
   animation-delay: 0s;
 }
 .orb-peach {
   width: 50vw; height: 50vw; bottom: -20vw; right: -10vw;
-  background: radial-gradient(circle, rgba(253,186,116,0.5) 0%, rgba(253,186,116,0) 70%);
+  background: radial-gradient(circle, var(--orb-2-color) 0%, transparent 70%);
   animation-delay: -5s;
 }
 .orb-lavender {
   width: 35vw; height: 35vw; top: 30vh; left: 40vw;
-  background: radial-gradient(circle, rgba(196,181,253,0.6) 0%, rgba(196,181,253,0) 70%);
+  background: radial-gradient(circle, var(--orb-3-color) 0%, transparent 70%);
   animation-delay: -10s;
 }
 .orb-sky {
   width: 30vw; height: 30vw; top: 10vh; right: 10vw;
-  background: radial-gradient(circle, rgba(186,230,253,0.6) 0%, rgba(186,230,253,0) 70%);
+  background: radial-gradient(circle, var(--orb-4-color) 0%, transparent 70%);
   animation-delay: -15s;
 }
 .orb-rose {
   width: 45vw; height: 45vw; bottom: -10vw; left: 20vw;
-  background: radial-gradient(circle, rgba(254,205,211,0.5) 0%, rgba(254,205,211,0) 70%);
+  background: radial-gradient(circle, var(--orb-5-color) 0%, transparent 70%);
   animation-delay: -7s;
 }
 
