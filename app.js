@@ -142,30 +142,28 @@ const TTS = {
 
     // Voice Selection
     const sel = document.getElementById('tts-voice-select');
+    // Voice Selection
     let selectedVoice = null;
     
     if (targetLang === 'hi' || targetLang === 'mr' || /[\u0900-\u097F]/.test(clean)) {
-      // Broadly match any voice whose lang starts with 'hi' or 'mr', or whose name contains hindi/marathi
       selectedVoice = this.allVoices.find(v => v.lang.toLowerCase().startsWith(targetLang)) || 
                       this.allVoices.find(v => v.name.toLowerCase().includes(targetLang === 'hi' ? 'hindi' : 'marathi')) ||
                       this.allVoices.find(v => v.lang.toLowerCase().startsWith('hi') || v.lang.toLowerCase().startsWith('mr'));
-                      
-      if (!selectedVoice) {
-        alert("Your browser could not detect the Hindi/Marathi voice.\n\nEven though you installed it in Settings, your browser might need a restart to load it, OR you might need to use a browser like Chrome/Edge that fully supports cloud voices. \n\n(Current loaded voices: " + this.allVoices.length + ")");
-        this.onEnd();
-        return;
+    } else {
+      // English Voice Fallback
+      const sel = document.getElementById('tts-voice-select');
+      if (sel && this.voices.length > 0) {
+        const idx = parseInt(sel.value) || 0;
+        selectedVoice = this.voices[idx] || this.voices[0];
       }
-    }
-    
-    // Fallback to dropdown
-    if (!selectedVoice && sel && this.voices.length > 0) {
-      const idx = parseInt(sel.value) || 0;
-      selectedVoice = this.voices[idx] || this.voices[0];
     }
 
     if (selectedVoice) {
       this.utterance.voice = selectedVoice;
       this.utterance.lang = selectedVoice.lang;
+    } else if (targetLang !== 'en') {
+      // Let Android/OS natively handle the language even if it wasn't listed in getVoices()
+      this.utterance.lang = targetLang === 'hi' ? 'hi-IN' : 'mr-IN';
     }
 
     this.utterance.onstart = () => {
