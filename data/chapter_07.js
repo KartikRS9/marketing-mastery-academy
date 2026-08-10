@@ -20,14 +20,11 @@ window.marketingAcademyChapters[7] = {
     explanation: "First-principles marketing teaches that markets are heterogeneous. Customers have different preferences, resources, and pain points. Trying to serve the entire market with a single offering dilutes your value proposition, increases acquisition costs, and makes you vulnerable to niche competitors. Success requires choosing a subset of the market and matching your capabilities to their unique needs."
   },
   definitions: [
-    { term: "Market Segmentation", definition: "Dividing a market into distinct groups of buyers who have different needs, characteristics, or behaviors and who might require separate marketing strategies or mixes.", source: "Textbook" },
-    { term: "Market Targeting", definition: "Evaluating each market segment's attractiveness and selecting one or more segments to enter.", source: "Textbook" },
-    { term: "Differentiation", definition: "Differentiating the market offering to create superior customer value.", source: "Textbook" },
-    { term: "Positioning", definition: "Arranging for a market offering to occupy a clear, distinctive, and desirable place relative to competing products in the minds of target consumers.", source: "Textbook" },
-    { term: "Demographic Segmentation", definition: "Dividing the market into segments based on variables such as age, life-cycle stage, gender, income, occupation, education, religion, and generation.", source: "Textbook" },
-    { term: "Psychographic Segmentation", definition: "Dividing a market into different segments based on social class, lifestyle, or personality characteristics.", source: "Textbook" },
-    { term: "Behavioral Segmentation", definition: "Dividing a market into segments based on consumer knowledge, attitudes, uses of a product, or responses to a product.", source: "Textbook" },
-    { term: "Competitive Advantage", definition: "An advantage over competitors gained by offering greater customer value, either by having lower prices or providing more benefits that justify higher prices.", source: "Textbook" }
+    { term: "Market Segmentation", definition: "Dividing a market into smaller segments of buyers with distinct needs, characteristics, or behaviors that might require separate marketing strategies or mixes. The company identifies different ways to segment the market and develops profiles of the resulting market segments.", source: "Principles of Marketing, 17th Ed.", visual: "<i class='fas fa-users-cog'></i>" },
+    { term: "Market Targeting", definition: "Evaluating each market segment's attractiveness and selecting one or more segments to enter. A target market consists of a set of buyers who share common needs or characteristics that the company decides to serve.", source: "Principles of Marketing, 17th Ed.", visual: "<i class='fas fa-crosshairs'></i>" },
+    { term: "Differentiation", definition: "Differentiating the market offering to create superior customer value. To build profitable relationships with target customers, marketers must understand customer needs better than competitors do and deliver more customer value.", source: "Principles of Marketing, 17th Ed.", visual: "<i class='fas fa-star-half-alt'></i>" },
+    { term: "Positioning", definition: "Arranging for a market offering to occupy a clear, distinctive, and desirable place relative to competing products in the minds of target consumers. Marketers plan positions that distinguish their products from competing brands and give them the greatest advantage in their target markets.", source: "Principles of Marketing, 17th Ed.", visual: "<i class='fas fa-map-pin'></i>" },
+    { term: "Value Proposition", definition: "The full positioning of a brand—the full mix of benefits on which it is positioned. It is the answer to the customer's question, 'Why should I buy your brand?'", source: "Principles of Marketing, 17th Ed.", visual: "<i class='fas fa-gem'></i>" }
   ],
   intuition: {
     analogy: "STP is like precision key-and-lock engineering. The market is full of different locks (customer segments with unique combinations of problems). Segmentation is cataloging these locks. Targeting is selecting which lock you are equipped to open. Differentiation and Positioning is cutting your key (the product offering and branding) so that it fits that specific lock perfectly and turns smoothly. If you try to build a 'universal skeleton key' (mass marketing), it will be too loose to open any door successfully.",
@@ -35,14 +32,38 @@ window.marketingAcademyChapters[7] = {
   },
   frameworks: [
     {
-      name: "The STP Strategic Model",
-      explanation: "A sequential framework for building a market strategy.",
+      name: "Steps in Customer Value-Driven Marketing Strategy",
+      visual: "figure_7_1_stp_strategy_1785786034045.jpg",
+      explanation: "A four-step framework for designing a customer-driven marketing strategy. The first two steps involve selecting the customers that the company will serve. The final two steps involve deciding on a value proposition—how the company will create value for the target customers.",
       components: [
-        "Segmentation: Divide the total market into smaller segments based on key variables.",
-        "Targeting: Select the segment(s) to enter based on size, growth, and compatibility.",
-        "Differentiation: Identify unique value propositions that set your product apart.",
-        "Positioning: Position the market offering in the minds of target customers relative to competitors."
+        "1. Segmentation: Divide the total market into smaller segments.",
+        "2. Targeting: Select the segment or segments to enter.",
+        "3. Differentiation: Differentiate the market offering to create superior customer value.",
+        "4. Positioning: Position the market offering in the minds of target customers."
       ]
+    },
+    {
+      name: "Major Segmentation Variables",
+      visual: "<i class='fas fa-chart-bar'></i>",
+      explanation: "Companies use multiple variables to identify smaller, better-defined target groups. The key is to find the variables that best reveal the market's distinct segments.",
+      components: [
+        "Geographic: Dividing the market into different geographical units, such as nations, regions, states, counties, cities, or even neighborhoods.",
+        "Demographic: Dividing the market into segments based on variables such as age, life-cycle stage, gender, income, occupation, education, religion, ethnicity, and generation.",
+        "Psychographic: Dividing a market into different segments based on lifestyle or personality characteristics.",
+        "Behavioral: Dividing a market into segments based on consumer knowledge, attitudes, uses of a product, or responses to a product."
+      ]
+    },
+    {
+      name: "Perceptual Positioning Maps",
+      visual: "figure_7_2_perceptual_map_1785786064333.jpg",
+      explanation: "In planning their differentiation and positioning strategies, marketers often prepare perceptual positioning maps that show consumer perceptions of their brands versus competing products on important buying dimensions. The position of each circle on the map indicates the brand's perceived positioning on two dimensions.",
+      components: [
+        "Dimension 1: E.g., Price (High vs. Low)",
+        "Dimension 2: E.g., Orientation (Luxury/Performance vs. Practicality)",
+        "Size of Circle: Often indicates the brand's relative market share."
+      ]
+    }
+  ]
     },
     {
       name: "Targeting Coverage Strategies",

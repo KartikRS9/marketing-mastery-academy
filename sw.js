@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mktg-academy-cache-v5';
+const CACHE_NAME = 'mktg-academy-cache-v6';
 const ASSETS = [
   'index.html',
   'styles.css',
