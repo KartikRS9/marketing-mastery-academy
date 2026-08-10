@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Content Security Policy -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob:; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://translate.googleapis.com; frame-ancestors 'none'; base-uri 'self'; form-action 'none';">
+  
   <title>Marketing Mastery Academy | Philip Kotler & Gary Armstrong Curriculum</title>
   <!-- Favicon -->
   <link rel="icon" type="image/jpeg" href="images/logos/logo-active.jpg">
@@ -15,8 +19,12 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Tailwind/Vanilla Core Stylesheet -->
   <link rel="stylesheet" href="styles.css">
+  
+  <!-- DOMPurify for XSS Sanitization -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.5/purify.min.js" integrity="sha384-nszIONF2FGC59kn+pPFaRa6WUNGwsZgXZiJxJwQbym+TzcH7smolUviLgpPbNx7V" crossorigin="anonymous"></script>
+  
   <!-- Mermaid.js CDN for visual maps, flowcharts, decision trees -->
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js" integrity="sha384-WmdflGW9aGfoBdHc4rRyWzYuAjEmDwMdGdiPNacbwfGKxBW/SO6guzuQ76qjnSlr" crossorigin="anonymous"></script>
   <script>
     // Initialize mermaid configuration
     mermaid.initialize({
@@ -56,6 +64,33 @@
     <div class="orb orb-sky"></div>
     <div class="orb orb-rose"></div>
   </div>
+
+  <!-- ===== AUTHENTICATION GATE ===== -->
+  <div id="auth-gate" class="auth-gate">
+    <div class="auth-card">
+      <div class="auth-header">
+        <i class="fa-solid fa-lock auth-icon"></i>
+        <h2>Academy Access</h2>
+        <p>Enter your credentials to login or request access.</p>
+      </div>
+      <div class="auth-body">
+        <input type="email" id="auth-email" placeholder="name@example.com" class="auth-input">
+        <input type="password" id="auth-password" placeholder="Password" class="auth-input">
+        <div class="auth-actions">
+          <button id="auth-login-btn" class="auth-btn auth-btn-primary">
+            Login <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          <button id="auth-request-btn" class="auth-btn auth-btn-secondary">
+            Request Access
+          </button>
+        </div>
+        <p id="auth-message" class="auth-msg"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MAIN APP WRAPPER ===== -->
+  <div id="main-app" style="display: none;">
 
   <!-- ===== TTS FLOATING PLAYER BAR ===== -->
   <div id="tts-player-bar" class="tts-player-bar hidden">
@@ -141,6 +176,14 @@
         </div>
         <div class="header-right">
           <div class="theme-selector-container">
+            <label for="tts-accent-select" class="theme-select-label"><i class="fa-solid fa-language"></i> Audio:</label>
+            <select id="tts-accent-select" class="theme-select-dropdown" style="margin-right: 15px;">
+              <option value="en" selected>English</option>
+              <option value="hi">Hindi</option>
+              <option value="mr">Marathi</option>
+            </select>
+          </div>
+          <div class="theme-selector-container">
             <label for="theme-select" class="theme-select-label"><i class="fa-solid fa-palette"></i> Theme:</label>
             <select id="theme-select" class="theme-select-dropdown">
               <optgroup label="Light Themes">
@@ -148,6 +191,7 @@
                 <option value="corporate">☀️ Vibrant Corporate</option>
               </optgroup>
               <optgroup label="Dark Themes">
+                <option value="synthai">✨ SynthAI Dark</option>
                 <option value="linear">🌙 Linear Minimal</option>
                 <option value="gaming">🌙 Bubbly Gaming</option>
               </optgroup>
@@ -641,8 +685,17 @@
     </div>
   </div>
 
+  </div> <!-- /main-app -->
+
+  <!-- Motion One for Vanilla JS Animations -->
+  <script src="https://cdn.jsdelivr.net/npm/motion@11.11.13/dist/motion.js" integrity="sha384-czaB7zH9slIhvFgUxhO8sSnYf4cnCeV2N3zOvDnNKFzRKu5AwqDKEZlCLsaQkoop" crossorigin="anonymous"></script>
+  
+  <!-- Supabase CDN (Added for Auth) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
   <!-- Load Chapters Index and Application Core -->
   <script src="data/chapters.js"></script>
+  <script src="auth.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

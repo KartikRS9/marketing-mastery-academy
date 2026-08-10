@@ -62,7 +62,7 @@ const TTS = {
     const engineSel = document.getElementById('tts-engine-select');
     if (!sel || !this.allVoices) return;
     
-    sel.innerHTML = '';
+    sel.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
     const selectedEngine = engineSel ? engineSel.value : 'all';
     
     let filteredVoices = this.allVoices;
@@ -100,31 +100,78 @@ const TTS = {
     });
   },
 
-  speak(text, label, btnEl) {
+  async speak(text, label, btnEl) {
     if (!this.synth) return;
     this.stop();
 
-    // Clean text — strip HTML tags and excessive whitespace
-    const clean = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    // Clean text
+    let clean = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
     if (!clean) return;
+
+    // Translation Logic
+    const targetLang = document.getElementById('tts-accent-select')?.value || 'en';
+    
+    if (targetLang !== 'en') {
+      this.showBar('Translating...');
+      if (btnEl) {
+        this.activeBtn = btnEl;
+        btnEl.classList.add('tts-active');
+        btnEl.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize('<i class="fas fa-spinner fa-spin"></i> Translating', { ADD_ATTR: ['target'] }) : ('<i class="fas fa-spinner fa-spin"></i> Translating');
+      }
+      try {
+        const chunkSize = 800; // Safe size to avoid HTTP 414 URI Too Long
+        let translatedResult = '';
+        for (let i = 0; i < clean.length; i += chunkSize) {
+            const chunk = clean.substring(i, i + chunkSize);
+            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${targetLang}&dt=t&q=${encodeURIComponent(chunk)}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            translatedResult += data[0].map(item => item[0]).join('');
+        }
+        clean = translatedResult;
+      } catch (err) {
+        console.error('Translation failed', err);
+        this.onEnd();
+        return; // Abort if translation fails
+      }
+    }
 
     this.utterance = new SpeechSynthesisUtterance(clean);
     this.utterance.rate = parseFloat(document.getElementById('tts-speed-select')?.value || 1);
     this.utterance.pitch = 1;
 
-    // Pick selected voice
+    // Voice Selection
     const sel = document.getElementById('tts-voice-select');
-    if (sel && this.voices.length > 0) {
+    let selectedVoice = null;
+    
+    if (targetLang === 'hi' || targetLang === 'mr' || /[\u0900-\u097F]/.test(clean)) {
+      selectedVoice = this.allVoices.find(v => v.lang.toLowerCase() === `${targetLang}-in`) || 
+                      this.allVoices.find(v => v.lang.toLowerCase() === 'hi-in' || v.lang.toLowerCase() === 'mr-in');
+                      
+      if (!selectedVoice) {
+        alert("Your device does not have a Hindi or Marathi Text-to-Speech voice installed.\n\nPlease go to your device Settings (e.g. Windows Settings -> Time & Language -> Language -> Add a language) and download the Speech Pack for Hindi or Marathi to hear the translations!");
+        this.onEnd();
+        return;
+      }
+    }
+    
+    // Fallback to dropdown
+    if (!selectedVoice && sel && this.voices.length > 0) {
       const idx = parseInt(sel.value) || 0;
-      this.utterance.voice = this.voices[idx] || this.voices[0];
+      selectedVoice = this.voices[idx] || this.voices[0];
+    }
+
+    if (selectedVoice) {
+      this.utterance.voice = selectedVoice;
+      this.utterance.lang = selectedVoice.lang;
     }
 
     this.utterance.onstart = () => {
-      this.showBar(label);
+      this.showBar(targetLang !== 'en' ? `Reading in ${targetLang === 'hi' ? 'Hindi' : 'Marathi'}...` : label);
       if (btnEl) {
         this.activeBtn = btnEl;
         btnEl.classList.add('tts-active');
-        btnEl.innerHTML = '<i class="fa-solid fa-stop"></i> Stop';
+        btnEl.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize('<i class="fa-solid fa-stop"></i> Stop', { ADD_ATTR: ['target'] }) : ('<i class="fa-solid fa-stop"></i> Stop');
       }
     };
 
@@ -155,7 +202,7 @@ const TTS = {
     document.body.classList.remove('tts-playing');
     if (this.activeBtn) {
       this.activeBtn.classList.remove('tts-active');
-      this.activeBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Listen';
+      this.activeBtn.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '<i class="fa-solid fa-volume-high"></i> Listen', { ADD_ATTR: ['target'] }) : ( '<i class="fa-solid fa-volume-high"></i> Listen');
       this.activeBtn = null;
     }
     const icon = document.getElementById('tts-pause-icon');
@@ -213,6 +260,9 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCurriculum();
   setupEventListeners();
   updateProgressUI();
+  
+  // Trigger initial welcome animations
+  setTimeout(() => applyPageAnimations(), 100);
 });
 
 // Load and Apply Theme from LocalStorage
@@ -229,7 +279,8 @@ function applyThemeClass(themeName) {
     'theme-editorial',
     'theme-corporate',
     'theme-linear',
-    'theme-gaming'
+    'theme-gaming',
+    'theme-synthai'
   );
   // Add selected theme class (body default = obsidian, no class needed but add for consistency)
   document.body.classList.add(`theme-${themeName}`);
@@ -249,10 +300,10 @@ function updateToggleIcon(themeName) {
   const isLight = ['editorial', 'corporate'].includes(themeName);
   
   if (isLight) {
-    toggleBtn.innerHTML = '<i class="fa-solid fa-moon"></i>';
+    toggleBtn.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '<i class="fa-solid fa-moon"></i>', { ADD_ATTR: ['target'] }) : ( '<i class="fa-solid fa-moon"></i>');
     toggleBtn.title = 'Switch to Dark Mode';
   } else {
-    toggleBtn.innerHTML = '<i class="fa-solid fa-sun"></i>';
+    toggleBtn.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '<i class="fa-solid fa-sun"></i>', { ADD_ATTR: ['target'] }) : ( '<i class="fa-solid fa-sun"></i>');
     toggleBtn.title = 'Switch to Light Mode';
   }
 }
@@ -277,7 +328,7 @@ function saveProgress() {
 
 // Render Curriculum Sidebar
 function renderCurriculum() {
-  sidebarNav.innerHTML = '';
+  sidebarNav.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
   
   academyChapters.forEach(part => {
     const partTitle = document.createElement('div');
@@ -299,10 +350,13 @@ function renderCurriculum() {
       }
       
       const icon = isCompleted ? 'fa-circle-check' : 'fa-circle';
-      li.innerHTML = `
+      li.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
         <i class="fa-solid ${icon} nav-chapter-checkbox"></i>
         <span class="nav-chapter-text" title="Chapter ${ch.id}: ${ch.title}">Ch ${ch.id}: ${ch.title}</span>
-      `;
+      `, { ADD_ATTR: ['target'] }) : ( `
+        <i class="fa-solid ${icon} nav-chapter-checkbox"></i>
+        <span class="nav-chapter-text" title="Chapter ${ch.id}: ${ch.title}">Ch ${ch.id}: ${ch.title}</span>
+      `);
       
       li.addEventListener('click', () => {
         selectChapter(ch.id);
@@ -313,6 +367,7 @@ function renderCurriculum() {
     
     sidebarNav.appendChild(ul);
   });
+  applyPageAnimations();
 }
 
 // Global memory store for loaded chapter contents
@@ -408,7 +463,7 @@ function renderChapterView(data, partName) {
     if (data.learningObjectives) fullText += `Learning Objectives: ${data.learningObjectives.join('. ')}. `;
     if (data.keyDefinitions) fullText += `Key Definitions: ${data.keyDefinitions.map(d => `${d.term} is ${d.definition}`).join('. ')}. `;
     if (data.keyFrameworks) fullText += `Key Frameworks: ${data.keyFrameworks.map(f => `${f.name}: ${f.explanation}`).join('. ')}. `;
-    ttsContainer.innerHTML = TTS.btn(fullText, `Chapter ${data.id}`);
+    ttsContainer.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( TTS.btn(fullText, `Chapter ${data.id}`), { ADD_ATTR: ['target'] }) : ( TTS.btn(fullText, `Chapter ${data.id}`));
   }
 
   // Render Active Persona Focus Panel
@@ -416,7 +471,7 @@ function renderChapterView(data, partName) {
 
   // Render Lessons timeline
   const lessonsTimeline = document.getElementById('lessons-timeline');
-  lessonsTimeline.innerHTML = '';
+  lessonsTimeline.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
   // Close any open lesson focus card when chapter changes
   const focusCard = document.getElementById('lesson-focus-card');
   if (focusCard) focusCard.classList.add('hidden');
@@ -425,10 +480,13 @@ function renderChapterView(data, partName) {
     const node = document.createElement('div');
     node.className = 'timeline-node';
     node.style.cursor = 'pointer';
-    node.innerHTML = `
+    node.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
       <span class="timeline-node-num">${index + 1}</span>
       <span>${lesson}</span>
-    `;
+    `, { ADD_ATTR: ['target'] }) : ( `
+      <span class="timeline-node-num">${index + 1}</span>
+      <span>${lesson}</span>
+    `);
     
     node.addEventListener('click', () => {
       lessonsTimeline.querySelectorAll('.timeline-node').forEach(el => el.classList.remove('active'));
@@ -456,30 +514,36 @@ function renderChapterView(data, partName) {
 
   // Reset tab to Core
   switchTab('strategic-core');
+  
+  // Apply animations
+  applyPageAnimations();
 }
 
 // Tab 1: Core Rendering
 function renderCoreTab(data) {
   // Learning Objectives
   const objectivesUl = document.getElementById('core-learning-objectives');
-  objectivesUl.innerHTML = '';
+  objectivesUl.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
   data.learningObjectives.forEach(obj => {
     const li = document.createElement('li');
-    li.innerHTML = `${obj} ${TTS.btn(obj, 'Objective')}`;
+    li.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `${obj} ${TTS.btn(obj, 'Objective')}`, { ADD_ATTR: ['target'] }) : ( `${obj} ${TTS.btn(obj, 'Objective')}`);
     objectivesUl.appendChild(li);
   });
 
   // First Principles
   const fpDiv = document.getElementById('core-first-principles');
   const ttsFp = TTS.btn(`${data.firstPrinciples.statement}. ${data.firstPrinciples.explanation}`, 'First Principles');
-  fpDiv.innerHTML = `
+  fpDiv.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
     <div class="fp-quote">${data.firstPrinciples.statement} ${ttsFp}</div>
     <p class="fp-text">${data.firstPrinciples.explanation}</p>
-  `;
+  `, { ADD_ATTR: ['target'] }) : ( `
+    <div class="fp-quote">${data.firstPrinciples.statement} ${ttsFp}</div>
+    <p class="fp-text">${data.firstPrinciples.explanation}</p>
+  `);
 
   // Definitions
   const defsGrid = document.getElementById('core-definitions');
-  defsGrid.innerHTML = '';
+  defsGrid.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
   data.definitions.forEach(def => {
     const card = document.createElement('div');
     card.className = 'definition-card';
@@ -488,31 +552,44 @@ function renderCoreTab(data) {
     const sourceIcon = isTextbook ? 'fa-book' : 'fa-lightbulb';
     
     const ttsBtnDef = TTS.btn(`${def.term}. ${def.definition}`, def.term);
-    card.innerHTML = `
+    card.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
       <div class="def-header">
         <span class="def-term">${def.term}</span>
         <span class="legend-badge def-source ${badgeClass}"><i class="fa-solid ${sourceIcon}"></i> ${def.source}</span>
         ${ttsBtnDef}
       </div>
       <p class="def-text">${def.definition}</p>
-    `;
+    `, { ADD_ATTR: ['target'] }) : ( `
+      <div class="def-header">
+        <span class="def-term">${def.term}</span>
+        <span class="legend-badge def-source ${badgeClass}"><i class="fa-solid ${sourceIcon}"></i> ${def.source}</span>
+        ${ttsBtnDef}
+      </div>
+      <p class="def-text">${def.definition}</p>
+    `);
     defsGrid.appendChild(card);
   });
 
   // Intuition Analogy
   const intuitionDiv = document.getElementById('core-intuition');
   const ttsIntuitionText = `Analogy: ${data.intuition.analogy}. ${data.intuition.story}`;
-  intuitionDiv.innerHTML = `
+  intuitionDiv.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
     <div class="intuition-analogy">
       <h4>Intuitive Analogy: ${TTS.btn(ttsIntuitionText, 'Intuition & Analogy')}</h4>
       ${data.intuition.analogy}
     </div>
     <p class="intuition-story">${data.intuition.story}</p>
-  `;
+  `, { ADD_ATTR: ['target'] }) : ( `
+    <div class="intuition-analogy">
+      <h4>Intuitive Analogy: ${TTS.btn(ttsIntuitionText, 'Intuition & Analogy')}</h4>
+      ${data.intuition.analogy}
+    </div>
+    <p class="intuition-story">${data.intuition.story}</p>
+  `);
 
   // Frameworks
   const frameworksContainer = document.getElementById('core-frameworks');
-  frameworksContainer.innerHTML = '';
+  frameworksContainer.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
   data.frameworks.forEach(fw => {
     const card = document.createElement('div');
     card.className = 'framework-card';
@@ -532,11 +609,15 @@ function renderCoreTab(data) {
     }
 
     const ttsFwText = `${fw.name}. ${fw.explanation}. ${fw.components ? fw.components.join('. ') : ''}`;
-    card.innerHTML = `
+    card.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
       <h4>${fw.name} ${TTS.btn(ttsFwText, fw.name)}</h4>
       <p class="framework-desc">${fw.explanation}</p>
       ${stepsHtml}
-    `;
+    `, { ADD_ATTR: ['target'] }) : ( `
+      <h4>${fw.name} ${TTS.btn(ttsFwText, fw.name)}</h4>
+      <p class="framework-desc">${fw.explanation}</p>
+      ${stepsHtml}
+    `);
     frameworksContainer.appendChild(card);
   });
 
@@ -548,37 +629,45 @@ function renderCoreTab(data) {
       return `<tr>${row.map(val => `<td>${val}</td>`).join('')}</tr>`;
     }).join('');
 
-    compTableDiv.innerHTML = `
+    compTableDiv.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
       <table class="comp-table">
         <thead><tr>${headersHtml}</tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table>
-    `;
+    `, { ADD_ATTR: ['target'] }) : ( `
+      <table class="comp-table">
+        <thead><tr>${headersHtml}</tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    `);
   } else {
-    compTableDiv.innerHTML = '<p class="text-center font-muted">No comparison table available for this module.</p>';
+    compTableDiv.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '<p class="text-center font-muted">No comparison table available for this module.</p>', { ADD_ATTR: ['target'] }) : ( '<p class="text-center font-muted">No comparison table available for this module.</p>');
   }
 
   // Cross-Links
   const crossUl = document.getElementById('core-cross-links');
-  crossUl.innerHTML = '';
+  crossUl.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
   data.crossLinks.forEach(link => {
     const li = document.createElement('li');
     const txt = `${link.chapter}: ${link.connection}`;
-    li.innerHTML = `<strong>${link.chapter}:</strong> ${link.connection} ${TTS.btn(txt, 'Cross-Link')}`;
+    li.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `<strong>${link.chapter}:</strong> ${link.connection} ${TTS.btn(txt, 'Cross-Link')}`, { ADD_ATTR: ['target'] }) : ( `<strong>${link.chapter}:</strong> ${link.connection} ${TTS.btn(txt, 'Cross-Link')}`);
     crossUl.appendChild(li);
   });
 
   // Memory Techniques
   const memoryDiv = document.getElementById('core-memory-techniques');
-  memoryDiv.innerHTML = '';
+  memoryDiv.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
   data.memoryTechniques.forEach(tech => {
     const card = document.createElement('div');
     card.className = 'memory-card';
     const txt = `${tech.name}, ${tech.type}. ${tech.details}`;
-    card.innerHTML = `
+    card.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
       <div class="memory-name"><i class="fa-solid fa-brain"></i> ${tech.name} (${tech.type}) ${TTS.btn(txt, tech.name)}</div>
       <p class="memory-desc">${tech.details}</p>
-    `;
+    `, { ADD_ATTR: ['target'] }) : ( `
+      <div class="memory-name"><i class="fa-solid fa-brain"></i> ${tech.name} (${tech.type}) ${TTS.btn(txt, tech.name)}</div>
+      <p class="memory-desc">${tech.details}</p>
+    `);
     memoryDiv.appendChild(card);
   });
 }
@@ -643,13 +732,13 @@ const textbookVisualsMap = {
 function renderVisualTab(data) {
   // Render Roadmap Timeline
   const roadmapContainer = document.getElementById('visual-roadmap-container');
-  roadmapContainer.innerHTML = '';
+  roadmapContainer.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
   
   if (data.visualRoadmapSteps) {
     data.visualRoadmapSteps.forEach((step, idx) => {
       const row = document.createElement('div');
       row.className = 'timeline-visual-row';
-      row.innerHTML = `
+      row.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
         <div class="timeline-visual-marker">
           <div class="timeline-visual-icon">${idx + 1}</div>
           <div class="timeline-visual-line"></div>
@@ -658,22 +747,35 @@ function renderVisualTab(data) {
           <div class="timeline-visual-title">${step.title}</div>
           <div class="timeline-visual-desc">${step.desc}</div>
         </div>
-      `;
+      `, { ADD_ATTR: ['target'] }) : ( `
+        <div class="timeline-visual-marker">
+          <div class="timeline-visual-icon">${idx + 1}</div>
+          <div class="timeline-visual-line"></div>
+        </div>
+        <div class="timeline-visual-content">
+          <div class="timeline-visual-title">${step.title}</div>
+          <div class="timeline-visual-desc">${step.desc}</div>
+        </div>
+      `);
       roadmapContainer.appendChild(row);
     });
   }
 
   // Render Infographics cards
   const infographicsContainer = document.getElementById('visual-infographics');
-  infographicsContainer.innerHTML = '';
+  infographicsContainer.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
   data.infographics.forEach(info => {
     const card = document.createElement('div');
     card.className = 'infographic-card';
-    card.innerHTML = `
+    card.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
       <div class="infographic-value">${info.value}</div>
       <div class="infographic-title">${info.title}</div>
       <p class="infographic-desc">${info.description}</p>
-    `;
+    `, { ADD_ATTR: ['target'] }) : ( `
+      <div class="infographic-value">${info.value}</div>
+      <div class="infographic-title">${info.title}</div>
+      <p class="infographic-desc">${info.description}</p>
+    `);
     infographicsContainer.appendChild(card);
   });
 
@@ -685,7 +787,7 @@ function renderVisualTab(data) {
     const list = textbookVisualsMap[data.id];
     if (list && list.length > 0) {
       visualsSection.classList.remove('hidden');
-      visualsContainer.innerHTML = list.map(item => `
+      visualsContainer.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( list.map(item => `
         <div class="textbook-visual-card">
           <div class="textbook-visual-img-container">
             <img src="images/${item.file}" alt="${item.title}">
@@ -695,10 +797,20 @@ function renderVisualTab(data) {
             <div class="textbook-visual-caption">${item.caption}</div>
           </div>
         </div>
-      `).join('');
+      `).join(''), { ADD_ATTR: ['target'] }) : ( list.map(item => `
+        <div class="textbook-visual-card">
+          <div class="textbook-visual-img-container">
+            <img src="images/${item.file}" alt="${item.title}">
+          </div>
+          <div class="textbook-visual-info">
+            <div class="textbook-visual-title">${item.title}</div>
+            <div class="textbook-visual-caption">${item.caption}</div>
+          </div>
+        </div>
+      `).join(''));
     } else {
       visualsSection.classList.add('hidden');
-      visualsContainer.innerHTML = '';
+      visualsContainer.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
     }
   }
 }
@@ -706,38 +818,44 @@ function renderVisualTab(data) {
 // Tab 3: Cases Rendering
 function renderCasesTab(data) {
   // Snippets
-  document.getElementById('cases-real-world').innerHTML = `${data.examples.realWorld} ${TTS.btn(data.examples.realWorld, 'Real World')}`;
-  document.getElementById('cases-industry').innerHTML = `${data.examples.industry} ${TTS.btn(data.examples.industry, 'Industry')}`;
+  document.getElementById('cases-real-world').innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `${data.examples.realWorld} ${TTS.btn(data.examples.realWorld, 'Real World')}`, { ADD_ATTR: ['target'] }) : ( `${data.examples.realWorld} ${TTS.btn(data.examples.realWorld, 'Real World')}`);
+  document.getElementById('cases-industry').innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `${data.examples.industry} ${TTS.btn(data.examples.industry, 'Industry')}`, { ADD_ATTR: ['target'] }) : ( `${data.examples.industry} ${TTS.btn(data.examples.industry, 'Industry')}`);
 
   // Indian Case study
   const indianCaseDiv = document.getElementById('cases-indian-case');
-  indianCaseDiv.innerHTML = `
+  indianCaseDiv.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
     <h4 class="case-study-title">${data.examples.indianCase.title} ${TTS.btn(data.examples.indianCase.title + '. ' + data.examples.indianCase.details, 'Indian Case Study')}</h4>
     <p class="case-study-details">${data.examples.indianCase.details}</p>
-  `;
+  `, { ADD_ATTR: ['target'] }) : ( `
+    <h4 class="case-study-title">${data.examples.indianCase.title} ${TTS.btn(data.examples.indianCase.title + '. ' + data.examples.indianCase.details, 'Indian Case Study')}</h4>
+    <p class="case-study-details">${data.examples.indianCase.details}</p>
+  `);
 
   // Global Case Study
   const globalCaseDiv = document.getElementById('cases-global-case');
-  globalCaseDiv.innerHTML = `
+  globalCaseDiv.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
     <h4 class="case-study-title">${data.examples.globalCase.title} ${TTS.btn(data.examples.globalCase.title + '. ' + data.examples.globalCase.details, 'Global Case Study')}</h4>
     <p class="case-study-details">${data.examples.globalCase.details}</p>
-  `;
+  `, { ADD_ATTR: ['target'] }) : ( `
+    <h4 class="case-study-title">${data.examples.globalCase.title} ${TTS.btn(data.examples.globalCase.title + '. ' + data.examples.globalCase.details, 'Global Case Study')}</h4>
+    <p class="case-study-details">${data.examples.globalCase.details}</p>
+  `);
 
   // Action Items
   const practicalUl = document.getElementById('cases-practical-applications');
-  practicalUl.innerHTML = '';
+  practicalUl.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
   data.practicalApplications.forEach(app => {
     const li = document.createElement('li');
-    li.innerHTML = `${app} ${TTS.btn(app, 'Application')}`;
+    li.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `${app} ${TTS.btn(app, 'Application')}`, { ADD_ATTR: ['target'] }) : ( `${app} ${TTS.btn(app, 'Application')}`);
     practicalUl.appendChild(li);
   });
 
   // Mistakes
   const mistakesUl = document.getElementById('cases-common-mistakes');
-  mistakesUl.innerHTML = '';
+  mistakesUl.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
   data.commonMistakes.forEach(mistake => {
     const li = document.createElement('li');
-    li.innerHTML = `${mistake} ${TTS.btn(mistake, 'Common Mistake')}`;
+    li.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `${mistake} ${TTS.btn(mistake, 'Common Mistake')}`, { ADD_ATTR: ['target'] }) : ( `${mistake} ${TTS.btn(mistake, 'Common Mistake')}`);
     mistakesUl.appendChild(li);
   });
 }
@@ -747,14 +865,14 @@ function renderAcademicTab(data) {
   // Accordions helper
   function renderAccordion(targetId, qas) {
     const container = document.getElementById(targetId);
-    container.innerHTML = '';
+    container.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
     
     qas.forEach((qa, idx) => {
       const item = document.createElement('div');
       item.className = 'accordion-item';
       const ttsQaText = `Question: ${qa.question}. Answer: ${qa.answer}`;
       const ttsBtnQa = TTS.btn(ttsQaText, `Q${idx + 1}: ${qa.question.substring(0,50)}`);
-      item.innerHTML = `
+      item.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
         <button class="accordion-header">
           <span>Q${idx + 1}: ${qa.question}</span>
           <div style="display:flex;align-items:center;gap:0.5rem;">
@@ -765,7 +883,18 @@ function renderAcademicTab(data) {
         <div class="accordion-content">
           <div class="accordion-answer">${qa.answer}</div>
         </div>
-      `;
+      `, { ADD_ATTR: ['target'] }) : ( `
+        <button class="accordion-header">
+          <span>Q${idx + 1}: ${qa.question}</span>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            ${ttsBtnQa}
+            <i class="fa-solid fa-chevron-down accordion-icon"></i>
+          </div>
+        </button>
+        <div class="accordion-content">
+          <div class="accordion-answer">${qa.answer}</div>
+        </div>
+      `);
       
       const btn = item.querySelector('.accordion-header');
       const content = item.querySelector('.accordion-content');
@@ -795,23 +924,29 @@ function renderAcademicTab(data) {
   renderAccordion('academic-mba-questions', data.assessments.mbaQuestions);
 
   // Practice Exercises and Assignments Text
-  document.getElementById('academic-exercises').innerHTML = `${data.assessments.practiceExercises.join('<br><br>')} <div class="mt-3">${TTS.btn(data.assessments.practiceExercises.join('. '), 'Exercises')}</div>`;
-  document.getElementById('academic-assignments').innerHTML = `${data.assessments.assignments.join('<br><br>')} <div class="mt-3">${TTS.btn(data.assessments.assignments.join('. '), 'Assignments')}</div>`;
+  document.getElementById('academic-exercises').innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `${data.assessments.practiceExercises.join('<br><br>')} <div class="mt-3">${TTS.btn(data.assessments.practiceExercises.join('. '), 'Exercises')}</div>`, { ADD_ATTR: ['target'] }) : ( `${data.assessments.practiceExercises.join('<br><br>')} <div class="mt-3">${TTS.btn(data.assessments.practiceExercises.join('. '), 'Exercises')}</div>`);
+  document.getElementById('academic-assignments').innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `${data.assessments.assignments.join('<br><br>')} <div class="mt-3">${TTS.btn(data.assessments.assignments.join('. '), 'Assignments')}</div>`, { ADD_ATTR: ['target'] }) : ( `${data.assessments.assignments.join('<br><br>')} <div class="mt-3">${TTS.btn(data.assessments.assignments.join('. '), 'Assignments')}</div>`);
 
   // Scenario Caselets
   const scenarioContainer = document.getElementById('academic-scenarios');
-  scenarioContainer.innerHTML = '';
+  scenarioContainer.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
   data.assessments.scenarioQuestions.forEach((s, idx) => {
     const card = document.createElement('div');
     card.className = 'scenario-card';
     const ttsScenario = TTS.btn(`${s.scenario}. Question: ${s.question}. Analysis: ${s.analysis}`, `Scenario ${idx + 1}`);
-    card.innerHTML = `
+    card.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
       <div class="scenario-heading">Scenario ${idx + 1}: ${s.scenario.substring(0, 45)}... ${ttsScenario}</div>
       <p class="scenario-text">${s.scenario}</p>
       <div class="scenario-query"><strong>Question:</strong> ${s.question}</div>
       <button class="btn btn-secondary btn-sm" id="show-analysis-btn-${idx}">Show Model Analysis</button>
       <p class="scenario-analysis hidden" id="analysis-text-${idx}"><strong>Strategic Analysis:</strong> ${s.analysis}</p>
-    `;
+    `, { ADD_ATTR: ['target'] }) : ( `
+      <div class="scenario-heading">Scenario ${idx + 1}: ${s.scenario.substring(0, 45)}... ${ttsScenario}</div>
+      <p class="scenario-text">${s.scenario}</p>
+      <div class="scenario-query"><strong>Question:</strong> ${s.question}</div>
+      <button class="btn btn-secondary btn-sm" id="show-analysis-btn-${idx}">Show Model Analysis</button>
+      <p class="scenario-analysis hidden" id="analysis-text-${idx}"><strong>Strategic Analysis:</strong> ${s.analysis}</p>
+    `);
     
     const btn = card.querySelector(`#show-analysis-btn-${idx}`);
     const analysis = card.querySelector(`#analysis-text-${idx}`);
@@ -828,7 +963,7 @@ function renderAcademicTab(data) {
 // Tab 5: Review & Mastery Rendering
 function renderReviewTab(data) {
   // One Page Revision
-  document.getElementById('review-one-page').innerHTML = formatMarkdown(data.onePageRevision) + `<div class="mt-3">${TTS.btn(data.onePageRevision, 'One Page Revision')}</div>`;
+  document.getElementById('review-one-page').innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( formatMarkdown(data.onePageRevision) + `<div class="mt-3">${TTS.btn(data.onePageRevision, 'One Page Revision')}</div>`, { ADD_ATTR: ['target'] }) : ( formatMarkdown(data.onePageRevision) + `<div class="mt-3">${TTS.btn(data.onePageRevision, 'One Page Revision')}</div>`);
 
   // Feynman Review
   const feynmanText = document.getElementById('feynman-text');
@@ -843,7 +978,7 @@ function renderReviewTab(data) {
     const input = feynmanText.value.trim().toLowerCase();
     if (input.length < 20) {
       feynmanFeedback.className = 'feynman-feedback error-feedback';
-      feynmanFeedback.innerHTML = `<i class="fa-solid fa-circle-exclamation font-red"></i> <strong>Incomplete Review:</strong> Please write a more detailed explanation (at least 2-3 sentences) to test your conceptual recall.`;
+      feynmanFeedback.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `<i class="fa-solid fa-circle-exclamation font-red"></i> <strong>Incomplete Review:</strong> Please write a more detailed explanation (at least 2-3 sentences) to test your conceptual recall.`, { ADD_ATTR: ['target'] }) : ( `<i class="fa-solid fa-circle-exclamation font-red"></i> <strong>Incomplete Review:</strong> Please write a more detailed explanation (at least 2-3 sentences) to test your conceptual recall.`);
       feynmanFeedback.classList.remove('hidden');
       return;
     }
@@ -856,18 +991,26 @@ function renderReviewTab(data) {
     
     feynmanFeedback.className = 'feynman-feedback';
     if (strengthPct > 70) {
-      feynmanFeedback.innerHTML = `
+      feynmanFeedback.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
         <i class="fa-solid fa-circle-check font-mint"></i> <strong>Excellent Feynman Recall!</strong> 
         Your explanation matched ${strengthPct}% of the critical academic criteria (Keywords included: ${matched.join(', ')}). 
         You explained the concept cleanly without relying on unnecessary complexity.
-      `;
+      `, { ADD_ATTR: ['target'] }) : ( `
+        <i class="fa-solid fa-circle-check font-mint"></i> <strong>Excellent Feynman Recall!</strong> 
+        Your explanation matched ${strengthPct}% of the critical academic criteria (Keywords included: ${matched.join(', ')}). 
+        You explained the concept cleanly without relying on unnecessary complexity.
+      `);
     } else {
       const missed = keywords.filter(w => !matched.includes(w.toLowerCase()));
-      feynmanFeedback.innerHTML = `
+      feynmanFeedback.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
         <i class="fa-solid fa-lightbulb font-gold"></i> <strong>Good Attempt:</strong> 
         Your explanation covers the basics, but misses critical structural dimensions. 
         Try integrating these concepts: <strong>${missed.join(', ')}</strong>.
-      `;
+      `, { ADD_ATTR: ['target'] }) : ( `
+        <i class="fa-solid fa-lightbulb font-gold"></i> <strong>Good Attempt:</strong> 
+        Your explanation covers the basics, but misses critical structural dimensions. 
+        Try integrating these concepts: <strong>${missed.join(', ')}</strong>.
+      `);
     }
     feynmanFeedback.classList.remove('hidden');
   };
@@ -875,7 +1018,7 @@ function renderReviewTab(data) {
   feynmanExampleBtn.onclick = () => {
     feynmanText.value = data.feynmanReview.guide;
     feynmanFeedback.className = 'feynman-feedback';
-    feynmanFeedback.innerHTML = `Loaded a model Feynman narrative for study. Analyze the structure and rewrite in your own words.`;
+    feynmanFeedback.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `Loaded a model Feynman narrative for study. Analyze the structure and rewrite in your own words.`, { ADD_ATTR: ['target'] }) : ( `Loaded a model Feynman narrative for study. Analyze the structure and rewrite in your own words.`);
     feynmanFeedback.classList.remove('hidden');
   };
 
@@ -886,28 +1029,31 @@ function renderReviewTab(data) {
 // Interactive Quiz Engine
 function initInteractiveQuiz(questions) {
   const container = document.getElementById('quiz-container');
-  container.innerHTML = '';
+  container.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
 
   let currentQIdx = 0;
   let score = 0;
   let answered = false;
 
   function renderQuestion() {
-    container.innerHTML = '';
+    container.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
     const q = questions[currentQIdx];
     answered = false;
 
     const header = document.createElement('div');
     header.className = 'quiz-header';
-    header.innerHTML = `
+    header.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
       <span class="quiz-progress">Question ${currentQIdx + 1} of ${questions.length}</span>
       <span class="progress-percent">Score: ${score}</span>
-    `;
+    `, { ADD_ATTR: ['target'] }) : ( `
+      <span class="quiz-progress">Question ${currentQIdx + 1} of ${questions.length}</span>
+      <span class="progress-percent">Score: ${score}</span>
+    `);
     container.appendChild(header);
 
     const qBox = document.createElement('div');
     qBox.className = 'quiz-question-box';
-    qBox.innerHTML = `<p>${q.question}</p>`;
+    qBox.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `<p>${q.question}</p>`, { ADD_ATTR: ['target'] }) : ( `<p>${q.question}</p>`);
     container.appendChild(qBox);
 
     const optionsUl = document.createElement('ul');
@@ -919,10 +1065,13 @@ function initInteractiveQuiz(questions) {
       
       const btn = document.createElement('button');
       btn.className = 'quiz-option-btn';
-      btn.innerHTML = `
+      btn.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
         <span class="quiz-option-letter">${letter}</span>
         <span>${opt}</span>
-      `;
+      `, { ADD_ATTR: ['target'] }) : ( `
+        <span class="quiz-option-letter">${letter}</span>
+        <span>${opt}</span>
+      `);
       
       btn.addEventListener('click', () => {
         if (answered) return; // Answer locked
@@ -944,9 +1093,9 @@ function initInteractiveQuiz(questions) {
         
         if (idx === q.correct) {
           score++;
-          expCard.innerHTML = `<strong><i class="fa-solid fa-circle-check"></i> Correct!</strong> ${q.explanation}`;
+          expCard.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `<strong><i class="fa-solid fa-circle-check"></i> Correct!</strong> ${q.explanation}`, { ADD_ATTR: ['target'] }) : ( `<strong><i class="fa-solid fa-circle-check"></i> Correct!</strong> ${q.explanation}`);
         } else {
-          expCard.innerHTML = `<strong><i class="fa-solid fa-circle-xmark font-red"></i> Incorrect:</strong> Selected option ${letter}. ${q.explanation}`;
+          expCard.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `<strong><i class="fa-solid fa-circle-xmark font-red"></i> Incorrect:</strong> Selected option ${letter}. ${q.explanation}`, { ADD_ATTR: ['target'] }) : ( `<strong><i class="fa-solid fa-circle-xmark font-red"></i> Incorrect:</strong> Selected option ${letter}. ${q.explanation}`);
         }
         
         container.appendChild(expCard);
@@ -979,7 +1128,7 @@ function initInteractiveQuiz(questions) {
   }
 
   function finishQuiz() {
-    container.innerHTML = '';
+    container.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
     const percentage = Math.round((score / questions.length) * 100);
     const passed = percentage >= 60;
 
@@ -1001,12 +1150,17 @@ function initInteractiveQuiz(questions) {
       resultIcon = `<i class="fa-solid fa-rotate-left font-orange" style="font-size: 4rem;"></i>`;
     }
 
-    resultCard.innerHTML = `
+    resultCard.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
       ${resultIcon}
       <div class="quiz-result-score">${score} / ${questions.length}</div>
       ${resultMessage}
       <button class="btn btn-secondary" id="restart-quiz-btn"><i class="fa-solid fa-rotate-right"></i> Restart Quiz</button>
-    `;
+    `, { ADD_ATTR: ['target'] }) : ( `
+      ${resultIcon}
+      <div class="quiz-result-score">${score} / ${questions.length}</div>
+      ${resultMessage}
+      <button class="btn btn-secondary" id="restart-quiz-btn"><i class="fa-solid fa-rotate-right"></i> Restart Quiz</button>
+    `);
 
     resultCard.querySelector('#restart-quiz-btn').onclick = () => {
       initInteractiveQuiz(questions);
@@ -1032,6 +1186,7 @@ function switchTab(tabId) {
   });
 
   document.getElementById(`tab-${tabId}`).classList.add('active');
+  applyPageAnimations();
 
   // Trigger Mermaid diagrams parse if the tab is Visual Mapping
   if (tabId === 'visual-mapping' && currentChapterData) {
@@ -1074,7 +1229,7 @@ function renderMermaidDiagrams(data) {
     
     // Clear out previous SVG contents
     el.removeAttribute('data-processed');
-    el.innerHTML = cleanMermaidSyntax(syntax);
+    el.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( cleanMermaidSyntax(syntax), { ADD_ATTR: ['target'] }) : ( cleanMermaidSyntax(syntax));
   };
 
   renderArea('mermaid-knowledge-graph', data.knowledgeGraph || '');
@@ -1176,14 +1331,17 @@ function setupSearch() {
     });
 
     if (matches.length > 0) {
-      searchResults.innerHTML = '';
+      searchResults.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
       matches.slice(0, 6).forEach(m => {
         const div = document.createElement('div');
         div.className = 'search-result-item';
-        div.innerHTML = `
+        div.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
           <div class="search-result-title"><span class="font-cyan">[${m.category}]</span> ${m.title}</div>
           <div class="search-result-excerpt">${m.excerpt} (${m.context})</div>
-        `;
+        `, { ADD_ATTR: ['target'] }) : ( `
+          <div class="search-result-title"><span class="font-cyan">[${m.category}]</span> ${m.title}</div>
+          <div class="search-result-excerpt">${m.excerpt} (${m.context})</div>
+        `);
         div.addEventListener('click', () => {
           selectChapter(m.chId);
           searchResults.classList.add('hidden');
@@ -1193,7 +1351,7 @@ function setupSearch() {
       });
       searchResults.classList.remove('hidden');
     } else {
-      searchResults.innerHTML = '<div class="search-result-item font-muted text-center" style="font-size: 0.8rem;">No results found</div>';
+      searchResults.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '<div class="search-result-item font-muted text-center" style="font-size: 0.8rem;">No results found</div>', { ADD_ATTR: ['target'] }) : ( '<div class="search-result-item font-muted text-center" style="font-size: 0.8rem;">No results found</div>');
       searchResults.classList.remove('hidden');
     }
   });
@@ -1582,18 +1740,18 @@ function showLessonFocus(lessonTitle) {
     const visual = lessonVisualsMap[lessonTitle];
     if (visual) {
       visualSeg.classList.remove('hidden');
-      visualImgBox.innerHTML = `<img src="images/${visual.file}" alt="${lessonTitle}">`;
-      visualCaption.innerHTML = visual.caption;
+      visualImgBox.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `<img src="images/${visual.file}" alt="${lessonTitle}">`, { ADD_ATTR: ['target'] }) : ( `<img src="images/${visual.file}" alt="${lessonTitle}">`);
+      visualCaption.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( visual.caption, { ADD_ATTR: ['target'] }) : ( visual.caption);
     } else {
       visualSeg.classList.add('hidden');
-      visualImgBox.innerHTML = '';
-      visualCaption.innerHTML = '';
+      visualImgBox.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
+      visualCaption.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( '', { ADD_ATTR: ['target'] }) : ( '');
     }
   }
   
   // Add TTS button alongside the lesson title
   const ttsBtnHtml = TTS.btn(summary, lessonTitle);
-  title.innerHTML = `${lessonTitle} ${ttsBtnHtml}`;
+  title.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `${lessonTitle} ${ttsBtnHtml}`, { ADD_ATTR: ['target'] }) : ( `${lessonTitle} ${ttsBtnHtml}`);
   desc.innerText = summary;
   
   card.classList.remove('hidden');
@@ -1848,8 +2006,11 @@ function renderPersonaFocusContent(data) {
                  generatePersonaStubData(data.id, data, activeLearningProfile);
                  
   if (activeLearningProfile === 'general') {
-    heading.innerText = `Academic Mentor Mode: Kotler Sequence & Curriculum`;
-    content.innerHTML = `
+    heading.innerText = `General Learner: Academic Overview`;
+    const ttsText = `Hello, Scholar! I am your personal marketing mentor and university professor. For Chapter ${data.id} (${data.title}), we are following the exact chapter and lesson sequence from Kotler & Armstrong's Principles of Marketing. Do not skip any modules. In the tabs below, we have comprehensively structured all 30 core academic elements. Mentorship Rule: Do not move to the next lesson or chapter until you have achieved professional-level mastery on this module's mastery test.`;
+    heading.innerHTML += TTS.btn(ttsText, heading.innerText.trim());
+    
+    content.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
       <div class="socratic-challenge-box" style="border-left: 4px solid var(--primary);">
         <p class="socratic-problem-text" style="font-size: 0.9rem; line-height: 1.6;">
           <i class="fa-solid fa-graduation-cap font-primary" style="font-size: 1.15rem; margin-right: 0.35rem;"></i>
@@ -1868,10 +2029,29 @@ function renderPersonaFocusContent(data) {
           </button>
         </div>
       </div>
-    `;
+    `, { ADD_ATTR: ['target'] }) : ( `
+      <div class="socratic-challenge-box" style="border-left: 4px solid var(--primary);">
+        <p class="socratic-problem-text" style="font-size: 0.9rem; line-height: 1.6;">
+          <i class="fa-solid fa-graduation-cap font-primary" style="font-size: 1.15rem; margin-right: 0.35rem;"></i>
+          <strong>Hello, Scholar!</strong> I am your personal marketing mentor and university professor. 
+          For Chapter <strong>${data.id}</strong> (<em>${data.title}</em>), we are following the exact chapter and lesson sequence from Kotler & Armstrong's <em>Principles of Marketing</em>.
+        </p>
+        <p class="socratic-problem-text" style="margin-top: 0.8rem; font-size: 0.85rem; color: var(--text-secondary);">
+          Do not skip any modules. In the tabs below, we have comprehensively structured all <strong>30 core academic elements</strong> (Objectives, First Principles, simple definitions, intuition, case studies, visual dependency maps, and common student mistakes).
+        </p>
+        <div style="margin-top: 1rem; border-top: 1px dashed var(--border-card); padding-top: 0.8rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+          <div style="font-size: 0.75rem; color: var(--text-muted);">
+            <i class="fa-solid fa-circle-exclamation font-gold"></i> <strong>Mentorship Rule:</strong> Do not move to the next lesson or chapter until you have achieved professional-level mastery on this module's mastery test.
+          </div>
+          <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;" onclick="document.querySelector('.tab-btn[data-tab=\\'review-mastery\\']').click();">
+            <i class="fa-solid fa-graduation-cap"></i> Jump to Mastery Test
+          </button>
+        </div>
+      </div>
+    `);
   } else if (activeLearningProfile === 'socratic') {
     heading.innerText = `Socratic Trainer: Concept & Problem Scoping`;
-    content.innerHTML = `
+    content.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
       <div class="socratic-challenge-box">
         <div class="socratic-problem-title"><i class="fa-solid fa-circle-question"></i> CONCEPT: ${dbData.concept}</div>
         <p class="socratic-problem-text"><strong>Strategic Challenge:</strong> ${dbData.problem}</p>
@@ -1881,7 +2061,17 @@ function renderPersonaFocusContent(data) {
         <button class="btn btn-primary" id="socratic-submit-btn"><i class="fa-solid fa-paper-plane"></i> Submit Proposal</button>
         <div id="socratic-feedback" class="socratic-feedback-box hidden"></div>
       </div>
-    `;
+    `, { ADD_ATTR: ['target'] }) : ( `
+      <div class="socratic-challenge-box">
+        <div class="socratic-problem-title"><i class="fa-solid fa-circle-question"></i> CONCEPT: ${dbData.concept}</div>
+        <p class="socratic-problem-text"><strong>Strategic Challenge:</strong> ${dbData.problem}</p>
+      </div>
+      <div class="socratic-input-area">
+        <textarea id="socratic-proposal" placeholder="Type your strategic proposal here... Include keywords such as: ${dbData.keywords.join(', ')}"></textarea>
+        <button class="btn btn-primary" id="socratic-submit-btn"><i class="fa-solid fa-paper-plane"></i> Submit Proposal</button>
+        <div id="socratic-feedback" class="socratic-feedback-box hidden"></div>
+      </div>
+    `);
     
     // Bind click validation
     document.getElementById('socratic-submit-btn').onclick = () => {
@@ -1891,7 +2081,7 @@ function renderPersonaFocusContent(data) {
       
       if (input.length < 20) {
         feedback.className = 'socratic-feedback-box socratic-feedback-error';
-        feedback.innerHTML = `<strong>Incomplete Solution:</strong> Please provide a more detailed analysis (at least 2-3 sentences) to justify your strategic proposal.`;
+        feedback.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `<strong>Incomplete Solution:</strong> Please provide a more detailed analysis (at least 2-3 sentences) to justify your strategic proposal.`, { ADD_ATTR: ['target'] }) : ( `<strong>Incomplete Solution:</strong> Please provide a more detailed analysis (at least 2-3 sentences) to justify your strategic proposal.`);
         return;
       }
       
@@ -1900,18 +2090,25 @@ function renderPersonaFocusContent(data) {
       
       if (passed) {
         feedback.className = 'socratic-feedback-box socratic-feedback-success';
-        feedback.innerHTML = `
+        feedback.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
           <strong><i class="fa-solid fa-circle-check font-mint"></i> Solution Accepted!</strong><br>
           Excellent strategic approach. You effectively utilized these core concepts: <strong>${matched.join(', ')}</strong>.<br><br>
           <strong>Model Guide:</strong> ${dbData.guide}
-        `;
+        `, { ADD_ATTR: ['target'] }) : ( `
+          <strong><i class="fa-solid fa-circle-check font-mint"></i> Solution Accepted!</strong><br>
+          Excellent strategic approach. You effectively utilized these core concepts: <strong>${matched.join(', ')}</strong>.<br><br>
+          <strong>Model Guide:</strong> ${dbData.guide}
+        `);
       } else {
         const missed = dbData.keywords.filter(w => !matched.includes(w.toLowerCase()));
         feedback.className = 'socratic-feedback-box socratic-feedback-error';
-        feedback.innerHTML = `
+        feedback.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
           <strong><i class="fa-solid fa-circle-exclamation font-red"></i> Proposal Refused:</strong> Your solution lacks core strategic frameworks.<br><br>
           Please rewrite your proposal and integrate at least two of these concepts: <strong>${missed.join(', ')}</strong>.
-        `;
+        `, { ADD_ATTR: ['target'] }) : ( `
+          <strong><i class="fa-solid fa-circle-exclamation font-red"></i> Proposal Refused:</strong> Your solution lacks core strategic frameworks.<br><br>
+          Please rewrite your proposal and integrate at least two of these concepts: <strong>${missed.join(', ')}</strong>.
+        `);
       }
     };
     
@@ -1925,7 +2122,7 @@ function renderPersonaFocusContent(data) {
       </div>
     `).join('');
     
-    content.innerHTML = `
+    content.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
       <div class="network-grid">
         <div class="network-8020-card">
           <h5><i class="fa-solid fa-scale-balanced font-primary"></i> 80/20 Core Concept Priority</h5>
@@ -1954,14 +2151,43 @@ function renderPersonaFocusContent(data) {
           <div class="mermaid" id="mermaid-persona-dependencies"></div>
         </div>
       </div>
-    `;
+    `, { ADD_ATTR: ['target'] }) : ( `
+      <div class="network-grid">
+        <div class="network-8020-card">
+          <h5><i class="fa-solid fa-scale-balanced font-primary"></i> 80/20 Core Concept Priority</h5>
+          <p class="font-muted" style="font-size: 0.75rem; margin-bottom: 0.5rem;">The 20% of high-yield concepts that drive 80% of module comprehension:</p>
+          ${conceptsHtml}
+        </div>
+        <div class="network-links-card">
+          <h5><i class="fa-solid fa-arrows-spin font-secondary"></i> Prerequisite & Linkage Map</h5>
+          <div class="network-link-row" style="margin-top: 0.5rem;">
+            <div class="network-link-label">PREREQUISITE DEPENDENCY:</div>
+            <div>${dbData.dependencies.prereqs}</div>
+          </div>
+          <div class="network-link-row">
+            <div class="network-link-label">FORWARD CONNECTIONS:</div>
+            <div>${dbData.dependencies.forward}</div>
+          </div>
+          <div class="network-link-row">
+            <div class="network-link-label">BACKWARD CONNECTIONS:</div>
+            <div>${dbData.dependencies.backward}</div>
+          </div>
+        </div>
+      </div>
+      <div class="visual-section card" style="margin-top: 1.5rem; padding: 1.25rem !important;">
+        <h5><i class="fa-solid fa-circle-nodes"></i> Dynamic Dependencies Flow</h5>
+        <div class="diagram-render-area" style="min-height: 150px !important; margin-top: 0.5rem;">
+          <div class="mermaid" id="mermaid-persona-dependencies"></div>
+        </div>
+      </div>
+    `);
     
     // Render the mini dependencies flowchart
     setTimeout(() => {
       const el = document.getElementById('mermaid-persona-dependencies');
       if (el) {
         el.removeAttribute('data-processed');
-        el.innerHTML = cleanMermaidSyntax(dbData.graphSyntax);
+        el.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( cleanMermaidSyntax(dbData.graphSyntax), { ADD_ATTR: ['target'] }) : ( cleanMermaidSyntax(dbData.graphSyntax));
         try {
           mermaid.run({ nodes: [el] });
         } catch (err) {
@@ -1982,7 +2208,7 @@ function renderPersonaFocusContent(data) {
     
     let questionsList = dbData.harvardCase.questions.map(q => `<li>${q}</li>`).join('');
     
-    content.innerHTML = `
+    content.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
       <div class="case-scholar-box">
         <div class="case-study-narrative">
           <h5>${dbData.harvardCase.title}</h5>
@@ -2024,11 +2250,53 @@ function renderPersonaFocusContent(data) {
           </div>
         </div>
       </div>
-    `;
+    `, { ADD_ATTR: ['target'] }) : ( `
+      <div class="case-scholar-box">
+        <div class="case-study-narrative">
+          <h5>${dbData.harvardCase.title}</h5>
+          <p style="margin-top: 0.5rem; line-height: 1.5;">${dbData.harvardCase.context}</p>
+          <p style="margin-top: 0.5rem;"><strong>Core Lessons Learned:</strong> ${dbData.harvardCase.lessons}</p>
+        </div>
+        
+        <div class="two-col-grid" style="margin-top: 0.5rem;">
+          <div>
+            <h5>Alternative Strategic Decisions</h5>
+            <table class="case-alternatives-table">
+              <thead>
+                <tr>
+                  <th>Decision Option</th>
+                  <th>Outcome Analysis</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows}
+              </tbody>
+            </table>
+          </div>
+          <div style="background: var(--bg-sidebar); border: 1px solid var(--border-card); padding: 1rem; border-radius: 8px;">
+            <h5>Harvard Discussion Questions</h5>
+            <ul style="padding-left: 1.2rem; font-size: 0.75rem; line-height: 1.5; color: var(--text-secondary); margin-top: 0.5rem;">
+              ${questionsList}
+            </ul>
+          </div>
+        </div>
+        
+        <div class="two-col-grid" style="margin-top: 0.5rem;">
+          <div style="background: var(--bg-sidebar); border: 1px solid var(--border-card); padding: 1rem; border-radius: 8px;">
+            <h6 style="color: var(--primary); font-weight: 700;"><i class="fa-solid fa-store"></i> Indian Corporate Reference</h6>
+            <p style="font-size: 0.75rem; line-height: 1.4; color: var(--text-secondary); margin-top: 0.25rem;"><strong>${dbData.indianExample.title}:</strong> ${dbData.indianExample.details}</p>
+          </div>
+          <div style="background: var(--bg-sidebar); border: 1px solid var(--border-card); padding: 1rem; border-radius: 8px;">
+            <h6 style="color: var(--secondary); font-weight: 700;"><i class="fa-solid fa-globe"></i> Global Corporate Reference</h6>
+            <p style="font-size: 0.75rem; line-height: 1.4; color: var(--text-secondary); margin-top: 0.25rem;"><strong>${dbData.globalExample.title}:</strong> ${dbData.globalExample.details}</p>
+          </div>
+        </div>
+      </div>
+    `);
     
   } else if (activeLearningProfile === 'product-manager') {
     heading.innerText = `Tech Product Manager: Value Props & PMF Alignment`;
-    content.innerHTML = `
+    content.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize( `
       <div class="pm-blueprint">
         <div class="pm-blueprint-card">
           <div class="pm-card-title"><i class="fa-solid fa-bugs"></i> Customer Problem (JTBD)</div>
@@ -2054,7 +2322,38 @@ function renderPersonaFocusContent(data) {
           <p class="pm-card-desc" style="margin-top: 0.5rem;">${dbData.saasCase}</p>
         </div>
       </div>
-    `;
+    `, { ADD_ATTR: ['target'] }) : ( `
+      <div class="pm-blueprint">
+        <div class="pm-blueprint-card">
+          <div class="pm-card-title"><i class="fa-solid fa-bugs"></i> Customer Problem (JTBD)</div>
+          <p class="pm-card-desc"><strong>Core Scoping:</strong> ${dbData.problem}</p>
+          <p class="pm-card-desc" style="margin-top: 0.5rem;"><strong>Job-To-Be-Done:</strong> ${dbData.jtbd}</p>
+        </div>
+        
+        <div class="pm-blueprint-card">
+          <div class="pm-card-title"><i class="fa-solid fa-chart-line"></i> PMF Indicators & Metrics</div>
+          <p class="pm-card-desc"><strong>PMF Validation (Sean Ellis):</strong> ${dbData.pmf}</p>
+          <p class="pm-card-desc" style="margin-top: 0.5rem;"><strong>Key SaaS Performance metrics:</strong> ${dbData.metrics}</p>
+        </div>
+
+        <div class="pm-blueprint-card">
+          <div class="pm-card-title"><i class="fa-solid fa-filter"></i> Prioritization Matrix (RICE)</div>
+          <p class="pm-card-desc">RICE prioritizes feature roadmaps by evaluating Reach, Impact, Confidence, and Effort.</p>
+          <p class="pm-card-desc" style="margin-top: 0.5rem;"><strong>Sprint Scoping:</strong> ${dbData.rice}</p>
+        </div>
+
+        <div class="pm-blueprint-card">
+          <div class="pm-card-title"><i class="fa-solid fa-laptop-code"></i> SaaS Technology Caselet</div>
+          <p class="pm-card-desc">How software platforms connect marketing positioning directly with code pipelines:</p>
+          <p class="pm-card-desc" style="margin-top: 0.5rem;">${dbData.saasCase}</p>
+        </div>
+      </div>
+    `);
+  }
+  
+  if (activeLearningProfile !== 'general') {
+    const ttsText = content.innerText || content.textContent;
+    heading.innerHTML += TTS.btn(ttsText, heading.innerText.trim());
   }
 }
 
@@ -2321,7 +2620,35 @@ function downloadChapterNotes() {
   a.href = url;
   a.download = `Chapter_${chapterNum}_${d.title.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 40)}_Notes.html`;
   document.body.appendChild(a);
-  a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+// ============================================================
+// MOTION ONE ANIMATIONS
+// ============================================================
+function applyPageAnimations() {
+  if (typeof Motion === 'undefined') return;
+  const { animate, stagger } = Motion;
+  
+  // Stagger entry for cards
+  const elements = document.querySelectorAll('.feature-item, .content-card, .definition-card, .framework-card, .memory-card, .infographic-card, .scenario-card, .lesson-focus-card, .persona-focus-card, .network-8020-card, .network-links-card, .pm-blueprint-card, .textbook-visual-card');
+  
+  if (elements.length > 0) {
+    animate(
+      elements,
+      { opacity: [0, 1], y: [20, 0], scale: [0.95, 1] },
+      { delay: stagger(0.05), duration: 0.5, easing: "spring" }
+    );
+  }
+  
+  // Hover spring physics for cards
+  elements.forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      animate(el, { scale: 1.02 }, { easing: "spring", stiffness: 300, damping: 20 });
+    });
+    el.addEventListener('mouseleave', () => {
+      animate(el, { scale: 1 }, { easing: "spring", stiffness: 300, damping: 20 });
+    });
+  });
 }
