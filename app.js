@@ -145,11 +145,13 @@ const TTS = {
     let selectedVoice = null;
     
     if (targetLang === 'hi' || targetLang === 'mr' || /[\u0900-\u097F]/.test(clean)) {
-      selectedVoice = this.allVoices.find(v => v.lang.toLowerCase() === `${targetLang}-in`) || 
-                      this.allVoices.find(v => v.lang.toLowerCase() === 'hi-in' || v.lang.toLowerCase() === 'mr-in');
+      // Broadly match any voice whose lang starts with 'hi' or 'mr', or whose name contains hindi/marathi
+      selectedVoice = this.allVoices.find(v => v.lang.toLowerCase().startsWith(targetLang)) || 
+                      this.allVoices.find(v => v.name.toLowerCase().includes(targetLang === 'hi' ? 'hindi' : 'marathi')) ||
+                      this.allVoices.find(v => v.lang.toLowerCase().startsWith('hi') || v.lang.toLowerCase().startsWith('mr'));
                       
       if (!selectedVoice) {
-        alert("Your device does not have a Hindi or Marathi Text-to-Speech voice installed.\n\nPlease go to your device Settings (e.g. Windows Settings -> Time & Language -> Language -> Add a language) and download the Speech Pack for Hindi or Marathi to hear the translations!");
+        alert("Your browser could not detect the Hindi/Marathi voice.\n\nEven though you installed it in Settings, your browser might need a restart to load it, OR you might need to use a browser like Chrome/Edge that fully supports cloud voices. \n\n(Current loaded voices: " + this.allVoices.length + ")");
         this.onEnd();
         return;
       }
