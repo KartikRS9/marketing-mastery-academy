@@ -1,5 +1,5 @@
 # Technical Architecture Document
-## Marketing Mastery Academy
+## Marketing Mastery
 
 > **Version:** 1.0  
 > **Date:** August 2026  
@@ -29,7 +29,7 @@
 
 ## 1. System Overview
 
-Marketing Mastery Academy is a **fully static, zero-build Progressive Web App** built without any framework, bundler, transpiler, or package manager. All application logic lives in a single monolithic `app.js`, layout in `index.html`, styling in `styles.css`, and curriculum content in per-chapter JS modules under `data/`.
+Marketing Mastery is a **fully static, zero-build Progressive Web App** built without any framework, bundler, transpiler, or package manager. All application logic lives in a single monolithic `app.js`, layout in `index.html`, styling in `styles.css`, and curriculum content in per-chapter JS modules under `data/`.
 
 ```mermaid
 graph TB
@@ -574,7 +574,7 @@ sequenceDiagram
 
 | Property | Value |
 |---|---|
-| `name` | Marketing Mastery Academy |
+| `name` | Marketing Mastery |
 | `short_name` | MktgAcademy |
 | `start_url` | `index.html` |
 | `display` | `standalone` |
@@ -778,4 +778,4 @@ The architecture comfortably supports:
 
 ---
 
-*Document generated: August 2026 · Marketing Mastery Academy v1.0*
+*Document generated: August 2026 · Marketing Mastery v1.0*

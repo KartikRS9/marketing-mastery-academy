@@ -1,4 +1,4 @@
-// Marketing Mastery Academy Application Core Controller
+// Marketing Mastery Application Core Controller
 
 // Global State
 let activeChapterId = null;
@@ -2511,7 +2511,7 @@ function downloadChapterNotes() {
     <div class="notes-source">📚 Kotler & Armstrong — Principles of Marketing, 17th Global Edition</div>
     <div class="notes-chapter-num">Chapter ${chapterNum}</div>
     <h1>${d.title}</h1>
-    <p style="color:#666; font-size:0.85rem;">Complete Study Notes · Marketing Mastery Academy · Generated ${new Date().toLocaleDateString('en-IN', {day:'numeric', month:'long', year:'numeric'})}</p>
+    <p style="color:#666; font-size:0.85rem;">Complete Study Notes · Marketing Mastery · Generated ${new Date().toLocaleDateString('en-IN', {day:'numeric', month:'long', year:'numeric'})}</p>
   </div>
 
   <div class="section">
@@ -2606,7 +2606,7 @@ function downloadChapterNotes() {
   </div>
 
   <div class="notes-footer">
-    Marketing Mastery Academy · Based on Kotler & Armstrong Principles of Marketing · For personal educational use only
+    Marketing Mastery · Based on Kotler & Armstrong Principles of Marketing · For personal educational use only
   </div>
 
 </div>

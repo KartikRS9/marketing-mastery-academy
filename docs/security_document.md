@@ -1,10 +1,10 @@
 # 🔐 Security & Access Control Document
-## Marketing Mastery Academy — Static PWA
+## Marketing Mastery — Static PWA
 
 > **Document Version:** 1.0  
 > **Date:** 2026-08-04  
 > **Classification:** Internal / Developer Reference  
-> **Repository:** [github.com/KartikRS9/marketing-mastery-academy](https://github.com/KartikRS9/marketing-mastery-academy) *(private)*  
+> **Repository:** [github.com/KartikRS9/marketing-mastery](https://github.com/KartikRS9/marketing-mastery) *(private)*  
 > **App Type:** Fully Static, Client-Side Only Progressive Web App (PWA)
 
 ---
@@ -31,7 +31,7 @@
 
 ## 1. Executive Summary
 
-Marketing Mastery Academy is a **fully static, client-side-only** Progressive Web App (PWA). It has no backend server, no database, no user accounts, and no Personal Identifiable Information (PII) collection. This architecture eliminates entire categories of server-side vulnerabilities (SQL injection, server-side RCE, authentication bypass, etc.).
+Marketing Mastery is a **fully static, client-side-only** Progressive Web App (PWA). It has no backend server, no database, no user accounts, and no Personal Identifiable Information (PII) collection. This architecture eliminates entire categories of server-side vulnerabilities (SQL injection, server-side RCE, authentication bypass, etc.).
 
 The residual risk surface is **narrow but real**, primarily encompassing:
 - Client-side XSS via unsafe `innerHTML` usage
@@ -632,7 +632,7 @@ uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
 ### 13.1 Content Source
 
-The educational content in Marketing Mastery Academy is derived from **Philip Kotler's marketing textbook(s)**. This raises significant intellectual property considerations.
+The educational content in Marketing Mastery is derived from **Philip Kotler's marketing textbook(s)**. This raises significant intellectual property considerations.
 
 ### 13.2 Copyright Risk Assessment
 
@@ -796,4 +796,4 @@ Use this checklist before each deployment:
 
 ---
 
-*Document generated: 2026-08-04 | Marketing Mastery Academy Security Team*
+*Document generated: 2026-08-04 | Marketing Mastery Security Team*

@@ -1,5 +1,5 @@
 # Frontend Specification Document
-## Marketing Mastery Academy
+## Marketing Mastery
 **Version:** 1.0 | **Last Updated:** August 2026 | **Status:** Active
 
 ---

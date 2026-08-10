@@ -1,5 +1,5 @@
 # 📘 Product Requirements Document
-## Marketing Mastery Academy
+## Marketing Mastery
 
 > **Version:** 1.0.0 &nbsp;|&nbsp; **Status:** Draft &nbsp;|&nbsp; **Date:** August 2026 &nbsp;|&nbsp; **Owner:** KartikRS9
 
@@ -30,7 +30,7 @@
 
 ## 1. Executive Summary
 
-**Marketing Mastery Academy** is a self-contained, offline-capable Progressive Web App (PWA) designed to transform passive reading of Philip Kotler & Gary Armstrong's *Principles of Marketing* (17th Edition) into an active, deeply engaging learning experience.
+**Marketing Mastery** is a self-contained, offline-capable Progressive Web App (PWA) designed to transform passive reading of Philip Kotler & Gary Armstrong's *Principles of Marketing* (17th Edition) into an active, deeply engaging learning experience.
 
 The application provides a structured, chapter-by-chapter curriculum covering all 20 chapters of the textbook, delivered through adaptive learning profiles, interactive visual concept maps, mastery quizzes, and Feynman-style review exercises. Built on a zero-dependency Vanilla HTML/CSS/JS stack with a lightweight Python HTTP server, the app is designed to be installable, offline-capable, and visually premium — supporting four curated themes that serve learners in any environment.
 
@@ -395,7 +395,7 @@ The app provides **4 curated visual themes** designed for different learning env
 
 ## 7. Out of Scope
 
-The following are explicitly **not** included in v1.0 of Marketing Mastery Academy:
+The following are explicitly **not** included in v1.0 of Marketing Mastery:
 
 | # | Out-of-Scope Item | Rationale |
 |---|---|---|
@@ -506,4 +506,4 @@ The following are explicitly **not** included in v1.0 of Marketing Mastery Acade
 
 ---
 
-*Document maintained by: KartikRS9 &nbsp;|&nbsp; Repository: [github.com/KartikRS9/marketing-mastery-academy](https://github.com/KartikRS9/marketing-mastery-academy)*
+*Document maintained by: KartikRS9 &nbsp;|&nbsp; Repository: [github.com/KartikRS9/marketing-mastery](https://github.com/KartikRS9/marketing-mastery)*

@@ -1,4 +1,4 @@
-// Data Validation Script for Marketing Mastery Academy
+// Data Validation Script for Marketing Mastery
 const fs = require('fs');
 const path = require('path');
 

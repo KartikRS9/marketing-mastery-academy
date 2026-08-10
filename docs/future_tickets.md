@@ -1,6 +1,6 @@
-# 📋 Marketing Mastery Academy — Future Tickets / Product Backlog
+# 📋 Marketing Mastery — Future Tickets / Product Backlog
 
-> **GitHub Repo:** [KartikRS9/marketing-mastery-academy](https://github.com/KartikRS9/marketing-mastery-academy)
+> **GitHub Repo:** [KartikRS9/marketing-mastery](https://github.com/KartikRS9/marketing-mastery)
 > **Last Updated:** 2026-08-04
 > **Current State:** Chapters 1, 2, 7 fully populated · Ch3 DOCX extracted · 8 figures integrated · PWA · 4 themes · 5 personas · Download Notes
 
@@ -257,4 +257,4 @@ P3       │ SEARCH-03    AI-05         GAMIFY-03     BACKEND-03
 ---
 
 *Document maintained by: Engineering / Product team*
-*Repo: https://github.com/KartikRS9/marketing-mastery-academy*
+*Repo: https://github.com/KartikRS9/marketing-mastery*
